@@ -6,10 +6,14 @@ use Moo;
 
 # VERSION
 
-has account => (is => 'rw');
-has amount => (is => 'rw');
-has commodity => (is => 'rw');
+my $reset_line = sub { $_[0]->_line(undef) };
+
+has account => (is => 'rw', trigger => $reset_line);
+has amount => (is => 'rw', trigger => $reset_line); # [scalar, unit]
+has is_virtual => (is => 'rw', trigger => $reset_line);
+has virtual_must_balance => (is => 'rw', trigger => $reset_line);
 has tx => (is => 'rw');
+has _line => (is => 'rw');
 
 sub BUILD {
     my ($self, $args) = @_;
@@ -17,8 +21,25 @@ sub BUILD {
 
 sub as_string {
     my ($self) = @_;
-    $self->date->ymd . " " . ($self->description // "") . "\n" .
-        join("", map {$_->as_string} @{$self->postings});
+    if (defined $self->_line) {
+        $self->tx->journal->raw_lines->[ $self->_line ];
+    } else {
+        my ($o, $c);
+        if ($self->is_virtual) {
+            if ($self->virtual_must_balance) {
+                ($o, $c) = ("[", "]");
+            } else {
+                ($o, $c) = ("(", ")");
+            }
+        } else {
+            ($o, $c) = ("", "");
+        }
+        my $c;
+
+        " $o".$self->account.$c.
+            ($self->amount ? "  ".$self->format_amount() : "").
+                "\n";
+    }
 }
 
 sub seq {
