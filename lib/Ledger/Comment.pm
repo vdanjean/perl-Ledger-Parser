@@ -6,9 +6,13 @@ use Moo;
 
 # VERSION
 
-has _line_start => (is => 'rw');
-has _line_end   => (is => 'rw');
-has parent       => (is => 'rw');
+has line_start => (is => 'rw');
+has line_end   => (is => 'rw');
+has parent      => (is => 'rw');
+
+sub BUILD {
+    my ($self, $args) = @_;
+}
 
 sub as_string {
     my ($self) = @_;
@@ -16,7 +20,7 @@ sub as_string {
     my $rl = $par->can("raw_lines") ? $par->raw_lines :
         $par->journal->raw_lines;
 
-    join "", @{$rl}[ $self->_line_start .. $self->_line_end ];
+    join "", @{$rl}[ $self->line_start .. $self->line_end ];
 }
 
 1;
@@ -34,5 +38,16 @@ __END__
 =head2 parent => OBJ
 
 Pointer to L<Ledger::Journal> or L<Ledger::Transaction> object.
+
+=head2 line_start => INT
+
+=head2 line_end => INT
+
+
+=head1 METHODS
+
+=head2 new(...)
+
+=head2 $c->as_string()
 
 =cut

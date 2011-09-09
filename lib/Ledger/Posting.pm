@@ -6,23 +6,54 @@ use Moo;
 
 # VERSION
 
-my $reset_line = sub { $_[0]->_line(undef) };
+my $reset_line = sub { $_[0]->line(undef) };
 
 has account => (is => 'rw', trigger => $reset_line);
 has amount => (is => 'rw', trigger => $reset_line); # [scalar, unit]
 has is_virtual => (is => 'rw', trigger => $reset_line);
 has virtual_must_balance => (is => 'rw', trigger => $reset_line);
 has tx => (is => 'rw');
-has _line => (is => 'rw');
+has line => (is => 'rw');
+
+our $re_scalar    = qr/(?:[+-]?[\d,]+(?:.\d+)?)/x;
+our $re_cmdity    = qr/(?:\$|[A-Za-z_]+)/x;
+our $re_amount    = qr/(?:
+                           (?:(?<cmdity>$re_cmdity)\s*(?<scalar>$re_scalar))|
+                           (?:(?<scalar>$re_scalar)\s*(?<cmdity>$re_cmdity))|
+                           (?:(?<scalar>$re_scalar))
+                       )/x;
 
 sub BUILD {
     my ($self, $args) = @_;
+    my $amt = $self->amount;
+    if (defined($amt) && !ref($amt)) {
+        $self->amount( $self->_parse_amount($self->amount) );
+    }
+    # re-set here because of trigger
+    if (!defined($self->line)) {
+        $self->line($args->{line});
+    }
+}
+
+sub _parse_amount {
+    my ($self, $amt) = @_;
+    $amt =~ $re_amount or die "Invalid amount syntax: $amt";
+    my $scalar = $+{scalar};
+    my $cmdity = $+{cmdity} // "";
+    $scalar =~ s/,//g;
+    [$scalar+0, $cmdity];
+}
+
+sub format_amount {
+    my ($self, $amt) = @_;
+    $amt //= $self->amount;
+    $amt->[0] . (length($amt->[1]) ? " $amt->[1]" : "");
 }
 
 sub as_string {
     my ($self) = @_;
-    if (defined $self->_line) {
-        $self->tx->journal->raw_lines->[ $self->_line ];
+    if (defined $self->line) {
+        $self->tx->journal->raw_lines->[ $self->line ];
     } else {
         my ($o, $c);
         if ($self->is_virtual) {
@@ -34,7 +65,6 @@ sub as_string {
         } else {
             ($o, $c) = ("", "");
         }
-        my $c;
 
         " $o".$self->account.$c.
             ($self->amount ? "  ".$self->format_amount() : "").
@@ -68,16 +98,20 @@ __END__
 
 Pointer to transaction object.
 
+=head2 line => INT
+
 
 =head1 METHODS
 
 =for Pod::Coverage BUILD
 
-=head2 seq()
+=head2 new(...)
+
+=head2 $p->seq()
 
 Sequence of this posting in the transaction (1 for first, 2 for second, and so
 on).
 
-=head2 as_string()
+=head2 $p->as_string()
 
 =cut
