@@ -122,6 +122,7 @@ Just like parse(), but will load document from file instead.
 I am not trying to reimplement/port Ledger to Perl. This module doesn't do
 reporting or parse expressions or many other Ledger features. I use this module
 mainly to insert/delete/edit transactions to journal file, e.g. for
-programatically reconciling journal with internet banking statement.
+programatically reconciling journal with internet banking statement, or for
+shortcuts (see L<App::LedgerUtils> for example).
 
 =cut
