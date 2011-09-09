@@ -34,6 +34,7 @@ sub postings {
     [grep {$_->isa('Ledger::Posting')} @{$self->entries}];
 }
 
+
 1;
 # ABSTRACT: Represent a Ledger transaction
 __END__
