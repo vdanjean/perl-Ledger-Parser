@@ -24,7 +24,7 @@ my $re_tx        = qr/^(?<date>$re_date)
                       (\s+\((?<seq>\d+)\))?
                       (?:\s+(?<desc>.+))?/x;
 our $re_accpart   = qr/(?:(
-                               (?:[^:\s]+[ \t][^:\s]+)|
+                               (?:[^:\s]+[ \t][^:\s]*)|
                                [^:\s]+
                        ))+/x; # don't allow double space
 our $re_acc0      = qr/(?:$re_accpart(?::$re_accpart)*)/x;
