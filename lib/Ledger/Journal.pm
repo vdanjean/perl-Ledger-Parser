@@ -126,8 +126,9 @@ sub _parse {
 
                 } elsif ($+{posting}) {
 
-                    die "Invalid posting syntax on line ".$ll->current_index.
-                        ": $line" unless $line =~ $re_posting;
+                    die "Invalid posting syntax on line #".
+                        ($ll->current_index+1).": $line"
+                            unless $line =~ $re_posting;
                     $log->tracef("Found posting: %s", $line);
                     my $p;
                     eval {
