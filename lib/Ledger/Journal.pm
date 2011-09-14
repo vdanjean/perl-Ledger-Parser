@@ -23,12 +23,12 @@ my $re_date      = $Ledger::Transaction::re_date;
 my $re_tx        = qr/^(?<date>$re_date)
                       (\s+\((?<seq>\d+)\))?
                       (?:\s+(?<desc>.+))?/x;
-my $re_accpart   = qr/(?:(
-                          (?:[^:\s]+[ \t][^:\s]+)|
-                          [^:\s]
-                      ))+/x; # don't allow double space
-my $re_acc0      = qr/(?:$re_accpart(?::$re_accpart)*)/x;
-my $re_acc       = qr/(?<acc>$re_acc0|\($re_acc0\)|\[$re_acc0\])/x;
+our $re_accpart   = qr/(?:(
+                               (?:[^:\s]+[ \t][^:\s]+)|
+                               [^:\s]+
+                       ))+/x; # don't allow double space
+our $re_acc0      = qr/(?:$re_accpart(?::$re_accpart)*)/x;
+our $re_acc       = qr/(?<acc>$re_acc0|\($re_acc0\)|\[$re_acc0\])/x;
 my $re_comment   = qr/^(\s*;|[^0-9P]|\s*$)/x;
 my $re_idcomment = qr/^\s+;/x;
 my $re_identline = qr/^\s+(?:(?<comment>;)|(?<posting>.?))/x;
