@@ -236,4 +236,9 @@ Return all accounts that are mentioned.
 
 =head2 $journal->add_transaction($tx)
 
+
+=head1 SEE ALSO
+
+L<Ledger::Journal>
+
 =cut
