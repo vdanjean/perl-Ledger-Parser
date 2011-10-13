@@ -118,6 +118,12 @@ sub balance {
     $self->_bal_or_check('bal');
 }
 
+sub is_balanced {
+    my ($self) = @_;
+    my $bal = $self->balance;
+    @$bal == 0;
+}
+
 sub check {
     my ($self) = @_;
     $self->_bal_or_check('check');
@@ -166,6 +172,10 @@ Pointer to L<Ledger::Journal> object.
 
 Return transaction's balance. If a transaction balances, this method should
 return [].
+
+=head2 $tx->is_balanced() => BOOL
+
+Return true if transaction is balanced, or false if otherwise.
 
 =head2 $tx->check()
 

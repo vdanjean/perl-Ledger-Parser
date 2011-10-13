@@ -24,8 +24,8 @@ sub test_parse {
     if (defined $args{num_tx}) {
         is(scalar(@{$j->transactions}), $args{num_tx}, "num_tx");
     }
-    if ($args{post_test}) {
-        $args{post_test}->($j);
+    if ($args{posttest}) {
+        $args{posttest}->($j);
     }
 }
 
@@ -47,7 +47,7 @@ my $ledger1 = <<'_';
  acc1:subacc1             20 USD
  acc2:subacc2            USD -20
 09-09 (3) transaction 3
- (acc1)                   $ 20
+ ;(acc1)                   $ 20
  acc2:subacc two:subsub    -30
  acc2:subacc3               30
 
@@ -59,5 +59,16 @@ my $ledger1 = <<'_';
 P 2011/09/09 USD 8500 IDR
 _
 
-test_parse ledger=>$ledger1, num_tx => 4;
+test_parse
+    ledger=>$ledger1,
+    num_tx => 4,
+    posttest => sub {
+        my ($j) = @_;
+        my $txs = $j->transactions;
+        is(ref($txs), 'ARRAY', 'transactions() returns array');
+        my $tx0 = $txs->[0];
+        is_deeply($tx0->balance, [], 'balance()');
+        ok($tx0->is_balanced, 'is_balanced()');
+    };
+
 done_testing();
