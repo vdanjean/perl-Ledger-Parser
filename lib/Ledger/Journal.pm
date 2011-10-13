@@ -239,6 +239,6 @@ Return all accounts that are mentioned.
 
 =head1 SEE ALSO
 
-L<Ledger::Journal>
+L<Ledger::Transaction>
 
 =cut
