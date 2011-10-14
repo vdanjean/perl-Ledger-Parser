@@ -69,13 +69,13 @@ __END__
  EOF
 
  # get the transactions
- my @tx = $journal->get_transactions;
+ my $txs = $journal->get_transactions;
 
  # get the postings of a transaction
- my @postings = $tx[0]->get_postings;
+ my $postings = $txs->[0]->get_postings;
 
  # get all the mentioned accounts
- my @accts = $journal->get_accounts;
+ my $accts = $journal->get_accounts;
 
 
 =head1 DESCRIPTION
