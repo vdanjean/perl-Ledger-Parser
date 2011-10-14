@@ -35,9 +35,14 @@ sub BUILD {
     }
 }
 
+sub _die {
+    my ($self, $msg) = @_;
+    $self->tx->journal->_die("Invalid posting: $msg");
+}
+
 sub _parse_amount {
     my ($self, $amt) = @_;
-    $amt =~ $re_amount or die "Invalid amount syntax: $amt";
+    $amt =~ $re_amount or $self->_die("Invalid amount syntax: $amt");
     my $scalar = $+{scalar};
     my $cmdity = $+{cmdity} // "";
     $scalar =~ s/,//g;

@@ -10,7 +10,7 @@ use Scalar::Util qw(blessed);
 # VERSION
 
 sub parse {
-    my ($self, $arg) = @_;
+    my ($self, $arg, $filename) = @_;
     die "Please specify a defined argument to parse()\n" unless defined($arg);
 
     my $aryref;
@@ -31,12 +31,12 @@ sub parse {
         die "Invalid argument, please supply a ".
             "string|arrayref|coderef|filehandle\n";
     }
-    Ledger::Journal->new(raw_lines=>$aryref);
+    Ledger::Journal->new(raw_lines=>$aryref, _filename=>$filename);
 }
 
 sub parse_file {
     my ($self, $filename) = @_;
-    $self->parse([read_file($filename)]);
+    $self->parse([read_file($filename)], $filename);
 }
 
 1;

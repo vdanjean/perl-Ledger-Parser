@@ -38,9 +38,14 @@ sub BUILD {
     }
 }
 
+sub _die {
+    my ($self, $msg) = @_;
+    $self->journal->_die("Invalid transaction: $msg");
+}
+
 sub _parse_date {
     my ($self, $date) = @_;
-    die "Invalid date" unless $date =~ $re_date;
+    $self->_die("Invalid date") unless $date =~ $re_date;
     my $y = $+{y} // $now->year;
     DateTime->new(day => $+{d}, month => $+{m}, year => $y);
 }
@@ -93,18 +98,17 @@ sub _bal_or_check {
 
     my @bal = map {[$bal{$_},$_]} grep {$bal{$_} != 0} keys %bal;
     if ($which eq 'check') {
-        my $errprefix = "Transaction at line #".($self->line+1).": ";
-        die $errprefix."there must be at least 2 postings"
-            if $num_p < 2 && !$num_v;
-        die $errprefix."there must be at least 1 posting"
-            if !$num_p;
-        die $errprefix."there must be at most 1 posting with blank amount"
+        $self->_die("There must be at least 2 postings") if $num_p<2 && !$num_v;
+        $self->_die("There must be at least 1 posting") if !$num_p;
+        $self->_die("There must be at most 1 posting with blank amount")
             if $num_blank > 1;
 
         unless ($num_blank) {
-            die $errprefix."doesn't balance (".
-                join(", ", map {$postings->[0]->format_amount($_)} @bal).")"
-                    if @bal;
+            $self->_die(
+                "doesn't balance (".
+                    join(", ", map {$postings->[0]->format_amount($_)} @bal).
+                        ")")
+                if @bal;
         }
         return 1;
     } else {
