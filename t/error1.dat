@@ -1,0 +1,16 @@
+; the second transaction does not balance
+
+09-09 (3) transaction 1
+ [acc1]                 20
+ acc2:subacc2          -45
+ acc2:subacc3           25
+
+2011-09-10    transaction 2
+ acc1:subacc1      123 IDR
+ acc2:subacc two  -122 IDR
+
+2011-09-11    transaction 3
+ acc1:subacc1      123 IDR
+ acc2:subacc two
+
+P 2011/09/09 USD 8500 IDR
