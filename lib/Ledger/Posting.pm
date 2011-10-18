@@ -22,7 +22,7 @@ sub BUILD {
     my ($self, $args) = @_;
     my $amt = $self->amount;
     if (defined($amt) && !ref($amt)) {
-        $self->amount( $self->_parse_amount($self->amount) );
+        $self->amount( Ledger::Util::parse_amount($self->amount) );
     }
     # re-set here because of trigger
     if (!defined($self->lineref)) {
@@ -33,21 +33,6 @@ sub BUILD {
 sub _die {
     my ($self, $msg) = @_;
     $self->tx->journal->_die("Invalid posting: $msg");
-}
-
-sub _parse_amount {
-    my ($self, $amt) = @_;
-    $amt =~ $re_amount or $self->_die("Invalid amount syntax: $amt");
-    my $number = $+{number};
-    my $cmdity = $+{cmdity} // "";
-    $number = parse_number_en(text => $+{number});
-    [$number, $cmdity];
-}
-
-sub format_amount {
-    my ($self, $amt) = @_;
-    $amt //= $self->amount;
-    $amt->[0] . (length($amt->[1]) ? " $amt->[1]" : "");
 }
 
 sub as_string {
@@ -67,7 +52,7 @@ sub as_string {
         }
 
         " $o".$self->account.$c.
-            ($self->amount ? "  ".$self->format_amount() : "").
+            ($self->amount ? "  ".Ledger::Util::format_amount() : "").
                 (defined($self->comment) ? " ;".$self->comment : "").
                     "\n";
     }

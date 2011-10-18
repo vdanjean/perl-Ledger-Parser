@@ -161,6 +161,9 @@ sub _parse {
                             $is_virtual = 1;
                             $vmb = 1;
                         }
+                        #$log->tracef("Amount = %s, parsed = %s", $amount,
+                        #             Ledger::Util::parse_amount($amount))
+                        #    if $amount;
                         $p = Ledger::Posting->new(
                             account => $acc, amount => $amount,
                             comment => $comment, is_virtual => $is_virtual,

@@ -4,14 +4,14 @@ use 5.010;
 use strict;
 use warnings;
 use Exporter::Lite;
-use Parse::Number::EN;
+use Parse::Number::EN qw(parse_number_en);
 
 our @EXPORT    = qw($re_cmdity $re_comment $re_date $re_amount $re_number
                     $re_accpart $re_account0 $re_account);
 our @EXPORT_OK = qw(parse_number);
 
 our $re_comment   = qr/^(\s*;|[^0-9P]|\s*$)/x;
-our $re_cmdity    = qr/(?:\w+|\$)/x; # XXX add other currency symbols
+our $re_cmdity    = qr/(?:[A-Za-z_]\w+|\$)/x; # XXX add other currency symbols
 my  $re_dsep      = qr![/-]!;
 our $re_date      = qr/(?:
                            (?:(?<y>\d\d|\d\d\d\d)$re_dsep)?
@@ -52,9 +52,23 @@ sub now {
 
 sub parse_date {
     my ($self, $date) = @_;
-    $self->_die("Invalid date") unless $date =~ $re_date;
+    die("Invalid date") unless $date =~ $re_date;
     my $y = $+{y} // $self->now->year;
     DateTime->new(day => $+{d}, month => $+{m}, year => $y);
+}
+
+sub parse_amount {
+    my ($amt) = @_;
+    $amt =~ $re_amount or die("Invalid amount syntax: $amt");
+    my $number = $+{number};
+    my $cmdity = $+{cmdity} // "";
+    $number = parse_number_en(text => $+{number});
+    [$number, $cmdity];
+}
+
+sub format_amount {
+    my ($amt) = @_;
+    $amt->[0] . (length($amt->[1]) ? " $amt->[1]" : "");
 }
 
 1;

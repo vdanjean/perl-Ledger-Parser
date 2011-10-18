@@ -84,10 +84,10 @@ sub _bal_or_check {
         my $amt = $_->amount;
         next unless $amt;
         next if $is_vnb && $which eq 'check';
-        my $scalar = $amt->[0];
+        my $number = $amt->[0];
         my $cmdity = $amt->[1];
         $bal{$cmdity} //= 0;
-        $bal{$cmdity} += $scalar;
+        $bal{$cmdity} += $number;
     }
 
     my @bal = map {[$bal{$_},$_]} grep {$bal{$_} != 0} keys %bal;
@@ -100,7 +100,7 @@ sub _bal_or_check {
         unless ($num_blank) {
             $self->_die(
                 "doesn't balance (".
-                    join(", ", map {$postings->[0]->format_amount($_)} @bal).
+                    join(", ", map {Ledger::Util::format_amount($_)} @bal).
                         ")")
                 if @bal;
         }
