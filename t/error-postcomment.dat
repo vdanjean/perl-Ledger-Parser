@@ -1,0 +1,5 @@
+; the second posting has an invalid comment
+
+10-19 transaction 1
+ acc2        -20 USD
+ acc1         20 USD ; not a comment

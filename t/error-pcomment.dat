@@ -1,0 +1,3 @@
+; pricing has invalid comment (lacks one whitespace)
+
+P 2011/10/19 USD 9000 IDR ; not comment
