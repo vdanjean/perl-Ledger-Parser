@@ -3,26 +3,20 @@ package Ledger::Transaction;
 use 5.010;
 use DateTime;
 use Log::Any '$log';
+use Ledger::Util;
 use Moo;
 
 # VERSION
 
 my $now = DateTime->now;
-my $reset_line = sub { $_[0]->line(undef) };
+my $reset_line = sub { $_[0]->lineref(undef) };
 
 has date        => (is => 'rw', trigger => $reset_line);
 has seq         => (is => 'rw', trigger => $reset_line);
 has description => (is => 'rw', trigger => $reset_line);
 has entries     => (is => 'rw');
-has line        => (is => 'rw');
+has lineref     => (is => 'rw'); # ref to line in journal->lines
 has journal     => (is => 'rw');
-
-my $re_dsep = qr![/-]!;
-our $re_date = qr/(?:
-                      (?:(?<y>\d\d|\d\d\d\d)$re_dsep)?
-                      (?<m>\d{1,2})$re_dsep
-                      (?<d>\d{1,2})
-                  )/x;
 
 sub BUILD {
     my ($self, $args) = @_;
@@ -33,8 +27,8 @@ sub BUILD {
         $self->date($self->_parse_date($self->date));
     }
     # re-set here because of trigger
-    if (!defined($self->line)) {
-        $self->line($args->{line});
+    if (!defined($self->lineref)) {
+        $self->lineref($args->{lineref});
     }
 }
 
@@ -45,7 +39,7 @@ sub _die {
 
 sub _parse_date {
     my ($self, $date) = @_;
-    $self->_die("Invalid date") unless $date =~ $re_date;
+    $self->_die("Invalid date") unless $date =~ $Ledger::Util::re_date;
     my $y = $+{y} // $now->year;
     DateTime->new(day => $+{d}, month => $+{m}, year => $y);
 }
@@ -54,8 +48,8 @@ sub as_string {
     my ($self) = @_;
     my $rl = $self->journal->raw_lines;
 
-    my $res = defined($self->line) ?
-        $self->journal->raw_lines->[$self->line] :
+    my $res = defined($self->lineref) ?
+        ${$self->lineref} :
             $self->date->ymd . ($self->seq ? " (".$self->seq.")" : "") . " ".
                 $self->description . "\n";
     for my $p (@{$self->entries}) {
@@ -155,7 +149,7 @@ Sequence of transaction in a day. Optional.
 
 =head2 description => STR
 
-=head2 line => INT
+=head2 lineref => REF TO STR
 
 =head2 entries => ARRAY OF OBJS
 
