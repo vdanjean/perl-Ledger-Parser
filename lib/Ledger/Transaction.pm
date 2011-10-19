@@ -8,11 +8,9 @@ use Moo;
 
 # VERSION
 
-my $reset_line = sub { $_[0]->lineref(undef) };
-
-has date        => (is => 'rw', trigger => $reset_line);
-has seq         => (is => 'rw', trigger => $reset_line);
-has description => (is => 'rw', trigger => $reset_line);
+has date        => (is => 'rw', trigger => $reset_lineref_sub);
+has seq         => (is => 'rw', trigger => $reset_lineref_sub);
+has description => (is => 'rw', trigger => $reset_lineref_sub);
 has entries     => (is => 'rw');
 has lineref     => (is => 'rw'); # ref to line in journal->lines
 has journal     => (is => 'rw');

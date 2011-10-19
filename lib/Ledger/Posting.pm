@@ -8,15 +8,13 @@ use Moo;
 
 # VERSION
 
-my $reset_line = sub { $_[0]->lineref(undef) };
-
-has account => (is => 'rw', trigger => $reset_line);
-has amount => (is => 'rw', trigger => $reset_line); # [scalar, unit]
-has comment => (is => 'rw', trigger => $reset_line); # [scalar, unit]
-has is_virtual => (is => 'rw', trigger => $reset_line);
-has virtual_must_balance => (is => 'rw', trigger => $reset_line);
-has tx => (is => 'rw');
-has lineref => (is => 'rw');
+has account    => (is => 'rw', trigger => $reset_lineref_sub);
+has amount     => (is => 'rw', trigger => $reset_lineref_sub); # [scalar, unit]
+has comment    => (is => 'rw', trigger => $reset_lineref_sub);
+has is_virtual => (is => 'rw', trigger => $reset_lineref_sub);
+has virtual_must_balance => (is => 'rw', trigger => $reset_lineref_sub);
+has tx         => (is => 'rw');
+has lineref    => (is => 'rw');
 
 sub BUILD {
     my ($self, $args) = @_;

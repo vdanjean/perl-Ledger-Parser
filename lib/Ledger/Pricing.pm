@@ -2,17 +2,16 @@ package Ledger::Pricing;
 
 use 5.010;
 use DateTime;
+use Ledger::Util;
 use Log::Any '$log';
 use Moo;
 
 # VERSION
 
-my $reset_line = sub { $_[0]->lineref(undef) };
-
-has date        => (is => 'rw', trigger => $reset_line);
-has n           => (is => 'rw', trigger => $reset_line);
-has cmdity1     => (is => 'rw', trigger => $reset_line);
-has cmdity2     => (is => 'rw', trigger => $reset_line);
+has date        => (is => 'rw', trigger => $reset_lineref_sub);
+has n           => (is => 'rw', trigger => $reset_lineref_sub);
+has cmdity1     => (is => 'rw', trigger => $reset_lineref_sub);
+has cmdity2     => (is => 'rw', trigger => $reset_lineref_sub);
 has lineref     => (is => 'rw'); # ref to line in journal->lines
 has journal     => (is => 'rw');
 

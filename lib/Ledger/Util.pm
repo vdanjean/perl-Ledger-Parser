@@ -7,8 +7,10 @@ use Exporter::Lite;
 use Parse::Number::EN qw(parse_number_en);
 
 our @EXPORT    = qw($re_cmdity $re_comment $re_date $re_amount $re_number
-                    $re_accpart $re_account0 $re_account);
+                    $re_accpart $re_account0 $re_account $reset_lineref_sub);
 our @EXPORT_OK = qw(parse_number);
+
+our $reset_lineref_sub = sub { $_[0]->lineref(undef) };
 
 our $re_comment   = qr/^(\s*;|[^0-9P]|\s*$)/x;
 our $re_cmdity    = qr/(?:[A-Za-z_]\w+|\$)/x; # XXX add other currency symbols
