@@ -89,6 +89,8 @@ sub _bal_or_check {
         $bal{$cmdity} //= 0;
         $bal{$cmdity} += $number;
     }
+    $log->tracef("num_p=%d, num_v=%d, num_blank=%d",
+                 $num_p, $num_v, $num_blank);
 
     my @bal = map {[$bal{$_},$_]} grep {$bal{$_} != 0} keys %bal;
     if ($which eq 'check') {

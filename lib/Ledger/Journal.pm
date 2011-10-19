@@ -155,6 +155,8 @@ sub _parse {
                         my $amount = $+{amount};
                         my $comment = $+{comment};
                         my ($is_virtual, $vmb);
+                        $acc =~ s/\s+$//;
+                        $log->tracef(">acc<=>%s<", $acc); # will catch a ws
                         if ($acc =~ s/^\((.+)\)$/$1/) {
                             $is_virtual = 1;
                         } elsif ($acc =~ s/^\[(.+)\]$/$1/) {
