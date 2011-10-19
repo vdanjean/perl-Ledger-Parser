@@ -20,7 +20,10 @@ sub test_parse {
     if ($args{dies}) {
         ok($eval_err, "dies");
     } else {
-        ok(!$eval_err, "doesn't die") or diag $eval_err;
+        ok(!$eval_err, "doesn't die") or do {
+            diag $eval_err;
+            return;
+        };
     }
     if (defined $args{num_tx}) {
         is(scalar(@{$j->transactions}), $args{num_tx}, "num_tx");
