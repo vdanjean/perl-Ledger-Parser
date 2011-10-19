@@ -51,15 +51,15 @@ sub now {
 }
 
 sub parse_date {
-    my ($self, $date) = @_;
-    die("Invalid date") unless $date =~ $re_date;
-    my $y = $+{y} // $self->now->year;
+    my ($date) = @_;
+    die("Invalid date `$date`") unless $date =~ $re_date;
+    my $y = $+{y} // now->year;
     DateTime->new(day => $+{d}, month => $+{m}, year => $y);
 }
 
 sub parse_amount {
     my ($amt) = @_;
-    $amt =~ $re_amount or die("Invalid amount syntax: $amt");
+    $amt =~ $re_amount or die("Invalid amount syntax `$amt`");
     my $number = $+{number};
     my $cmdity = $+{cmdity} // "";
     $number = parse_number_en(text => $+{number});

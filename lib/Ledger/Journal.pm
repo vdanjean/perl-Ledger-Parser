@@ -32,7 +32,11 @@ my $re_identline = qr/^\s+(?:(?<comment>;)|(?<posting>.?))/x;
 my $re_posting   = qr/^\s+(?<acc>$re_account)
                       (?:\s{2,}(?<amount>$re_amount))?
                       \s*(?:;(?<comment>.*))?$/x;
-my $re_pricing   = qr/^P\s+ ($re_cmdity) \s+ $re_number \s+ ($re_cmdity)
+my $re_pricing   = qr/^P\s+
+                      (?<date>$re_date) \s+
+                      (?<cmdity1>$re_cmdity) \s+
+                      (?<n>$re_number) \s+
+                      (?<cmdity2>$re_cmdity)
                       (?:\s;(?<comment>.*))?\s*$/x;
 
 sub BUILD {
@@ -111,8 +115,8 @@ sub _parse {
 
         } elsif (defined $+{tx}) {
             $log->tracef("Line is a transaction");
-
             $self->_die("Invalid transaction syntax") unless $line =~ $re_tx;
+            my %m=%+; $log->tracef("m=%s", \%m);
             my $tx;
             eval {
                 $tx = Ledger::Transaction->new(
@@ -145,18 +149,16 @@ sub _parse {
                     push @{$tx->entries}, $c;
 
                 } elsif ($+{posting}) {
-
                     $self->_die("Invalid posting syntax")
                         unless $line =~ $re_posting;
                     $log->tracef("Found posting: %s", $line);
                     my $p;
                     eval {
-                        my $acc = $+{acc};
-                        my $amount = $+{amount};
-                        my $comment = $+{comment};
                         my ($is_virtual, $vmb);
-                        $acc =~ s/\s+$//;
-                        $log->tracef(">acc<=>%s<", $acc); # will catch a ws
+                        my $acc     = $+{acc};
+                        my $amount  = $+{amount};
+                        my $comment = $+{comment};
+                        #$log->tracef(">acc<=>%s<", $acc); # will catch a ws
                         if ($acc =~ s/^\((.+)\)$/$1/) {
                             $is_virtual = 1;
                         } elsif ($acc =~ s/^\[(.+)\]$/$1/) {
@@ -181,17 +183,16 @@ sub _parse {
             push @{$self->entries}, $tx;
         } elsif (defined $+{pricing}) {
             $log->tracef("Line is a pricing");
-
             $self->_die("Invalid pricing syntax") unless $line =~ $re_pricing;
             my $tx;
             eval {
                 $tx = Ledger::Pricing->new(
-                    date => $+{date}, seq => $+{seq}, description=>$+{desc},
-                    comment => $+{comment},
+                    date => $+{date}, cmdity1=>$+{cmdity1}, n=>$+{n},
+                    cmdity2=>$+{cmdity2}, comment => $+{comment},
                     lineref => \$rl->[$i], journal => $self,
                 );
             };
-            $self->_die("Can't parse transaction: $@") if $@;
+            $self->_die("Can't parse pricing: $@") if $@;
 
         } else {
             $self->_die("Unknown entity");

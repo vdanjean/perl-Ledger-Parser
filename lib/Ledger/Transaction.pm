@@ -8,7 +8,6 @@ use Moo;
 
 # VERSION
 
-my $now = DateTime->now;
 my $reset_line = sub { $_[0]->lineref(undef) };
 
 has date        => (is => 'rw', trigger => $reset_line);
@@ -24,7 +23,7 @@ sub BUILD {
         $self->entries([]);
     }
     if (!ref($self->date)) {
-        $self->date($self->_parse_date($self->date));
+        $self->date(Ledger::Util::parse_date($self->date));
     }
     # re-set here because of trigger
     if (!defined($self->lineref)) {
@@ -35,13 +34,6 @@ sub BUILD {
 sub _die {
     my ($self, $msg) = @_;
     $self->journal->_die("Invalid transaction: $msg");
-}
-
-sub _parse_date {
-    my ($self, $date) = @_;
-    $self->_die("Invalid date") unless $date =~ $Ledger::Util::re_date;
-    my $y = $+{y} // $now->year;
-    DateTime->new(day => $+{d}, month => $+{m}, year => $y);
 }
 
 sub as_string {

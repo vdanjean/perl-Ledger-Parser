@@ -7,8 +7,7 @@ use Moo;
 
 # VERSION
 
-my $now = DateTime->now;
-my $reset_line = sub { $_[0]->line(undef) };
+my $reset_line = sub { $_[0]->lineref(undef) };
 
 has date        => (is => 'rw', trigger => $reset_line);
 has n           => (is => 'rw', trigger => $reset_line);
@@ -19,9 +18,6 @@ has journal     => (is => 'rw');
 
 sub BUILD {
     my ($self, $args) = @_;
-    unless ($self->entries) {
-        $self->entries([]);
-    }
     if (!ref($self->date)) {
         $self->date(Ledger::Util::parse_date($self->date));
     }
