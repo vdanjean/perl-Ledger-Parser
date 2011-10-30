@@ -1,5 +1,11 @@
 Revision history for Ledger-Parser.
 
+0.02    2011-10-31
+
+        Refactors and fixes. Add is_balanced() to transaction. Add sample file
+        and tests, flesh out L::Pricing. Add missing dependency to Moo [ct].
+
+
 0.01    2011-09-09
 
         First release.
