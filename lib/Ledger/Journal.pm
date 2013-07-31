@@ -20,15 +20,6 @@ has entries   => (is => 'rw'); # array of L::Transaction, L::Comment, ...
 has _filename => (is => 'rw'); # location for parsing error message
 has _lineno   => (is => 'rw'); # idem
 
-my $re_line      = qr/^(?:(?<tx>\d)|
-                          (?<pricing>P)|
-                          (?<comment>.?))/x;
-my $re_tx        = qr/^(?<date>$re_date)
-                      (\s+\((?<seq>\d+)\))?
-                      (?:\s+(?<desc>.+?)
-                          (?:\s\s+;(?<comment>.*))?)?/x;
-my $re_idcomment = qr/^\s+;/x;
-my $re_identline = qr/^\s+(?:(?<comment>;)|(?<posting>.?))/x;
 my $re_posting   = qr/^\s+(?<acc>$re_account)
                       (?:\s{2,}(?<amount>$re_amount))?
                       \s*(?:;(?<comment>.*))?$/x;
@@ -94,27 +85,27 @@ sub _parse {
         $i = $ll->current_index;
         $self->_lineno($i+1);
         $log->tracef("Read line #%d: %s", $i+1, $line);
-        $line =~ $re_line or $self->_die("Can't be parsed");
 
-        if (defined $+{comment}) {
+        # top-level line must be a transaction header which is started by a
+        # digit, or a pricing which starts by "P". all other lines will be
+        # ignored.
+        if ($line =~ /^P/) {
+            $log->tracef("Line is pricing");
+
+        } elsif ($line =~ /^\d/) {
+            $log->tracef("Line is transaction header");
+        } else {
             $log->tracef("Line is a comment");
 
-            my $ls = $i;
+            my $cmt = Ledger::Comment->new(parent=>$self);
             while (1) {
                 $line = $ll->peek;
                 last unless defined($line);
-                last unless $line =~ $re_comment;
+                last if $line =~ /^[0-9P]/;
                 $ll->next;
-                # should update _lineno, but not used here
+                push @{$cmt->linerefs}, \$rl->[$i];
             }
-            my $le = $i;
-            $log->tracef("Collected comment lines: %s", [@{$rl}[$ls..$le]]);
-            my $c = Ledger::Comment->new(
-                    parent => $self, line_start => $ls, line_end => $le);
-            push @{$self->entries}, $c;
-
-        } elsif (defined $+{tx}) {
-            $log->tracef("Line is a transaction");
+        }
             $self->_die("Invalid transaction syntax") unless $line =~ $re_tx;
             my %m=%+; $log->tracef("m=%s", \%m);
             my $tx;
@@ -253,7 +244,8 @@ Store the raw source lines.
 
 =head2 entries => ARRAY
 
-Transactions, pricing, and top-level entities.
+Transactions (L<Ledger::Transaction> objects), pricing (L<Ledger::Pricing>
+objects), and other top-level entities.
 
 
 =head1 METHODS
@@ -264,6 +256,9 @@ Transactions, pricing, and top-level entities.
 
 Create object from string.
 
+The usual way is to use L<Ledger::Parser> to construct the journal object for
+you.
+
 =head2 $journal->transactions([$criteria]) => \@tx
 
 Return transaction objects. $criteria is optional, a coderef that can be used to
@@ -271,7 +266,9 @@ filter wanted transactions.
 
 =head2 $journal->accounts() => \@acc
 
-Return all accounts that are mentioned.
+Return all accounts that are mentioned in the journal.
+
+Order (either alphabetical or by appearance) is not guaranteed.
 
 =head2 $journal->add_transaction($tx)
 

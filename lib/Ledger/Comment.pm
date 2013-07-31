@@ -6,12 +6,12 @@ use Moo;
 
 # VERSION
 
-has linerefs => (is => 'rw');
+has linerefs => (is => 'rw', default=>sub { [] });
 has parent   => (is => 'rw');
 
 sub BUILD {
     my ($self, $args) = @_;
-}
+xo}
 
 sub as_string {
     my ($self) = @_;

@@ -1,6 +1,6 @@
 package Ledger::Parser;
 
-use 5.010;
+use 5.010001;
 use Moo;
 
 use File::Slurp;
@@ -41,11 +41,9 @@ sub parse_file {
 
 1;
 # ABSTRACT: Parse Ledger journals
-__END__
 
 =head1 SYNOPSIS
 
- use 5.010;
  use Ledger::Parser;
  my $ledgerp = Ledger::Parser->new();
 
@@ -57,15 +55,15 @@ __END__
  ; -*- Mode: ledger -*-
  09/06 dinner
  Expenses:Food          $10.00
- Expenses:Tips        20000.00 IDR
+ Expenses:Tips         5000.00 IDR ; 5% tip
  Assets:Cash:Wallet
 
- 2011/09/07 opening balances
+ 2013/09/07 opening balances
  Assets:Mutual Funds:Mandiri  10,305.1234 MFEQUITY_MANDIRI_IAS
  Equity:Opening Balances
 
- P 2011/08/01 MFEQUITY_MANDIRI_IAS 1,453.8500 IDR
- P 2011/08/31 MFEQUITY_MANDIRI_IAS 1,514.1800 IDR
+ P 2013/08/01 MFEQUITY_MANDIRI_IAS 1,453.8500 IDR
+ P 2013/08/31 MFEQUITY_MANDIRI_IAS 1,514.1800 IDR
  EOF
 
  # get the transactions
@@ -108,7 +106,8 @@ Will die if there are parsing errors in journal.
 
 Returns L<Ledger::Journal> object. The object will contain a series of
 L<Ledger::Transaction> objects, which themselves will be comprised of a series
-of L<Ledger::Posting> objects.
+of L<Ledger::Posting> objects. Aside from transactions, there will also be some
+other objects like L<
 
 =head2 $orgp->parse_file($filename) => $journal
 
@@ -124,5 +123,9 @@ reporting or parse expressions or many other Ledger features. I use this module
 mainly to insert/delete/edit transactions to journal file, e.g. for
 programatically reconciling journal with internet banking statement, or for
 shortcuts (see L<App::LedgerUtils> for example).
+
+=head2 Is the parser round-trip?
+
+Yes. It should be able to produce identical output from the parse result.
 
 =cut
