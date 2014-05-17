@@ -3,7 +3,7 @@ package Ledger::Parser;
 use 5.010001;
 use Moo;
 
-use File::Slurp;
+use File::Slurp::Tiny qw(read_file);
 use Ledger::Journal;
 use Scalar::Util qw(blessed);
 

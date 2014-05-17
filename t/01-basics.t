@@ -3,7 +3,7 @@
 use 5.010;
 use strict;
 use warnings;
-use File::Slurp;
+use File::Slurp::Tiny qw(read_file);
 use FindBin qw($Bin);
 use Ledger::Parser;
 use Test::More 0.96;
