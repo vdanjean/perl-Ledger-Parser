@@ -82,10 +82,6 @@ This module parses Ledger journal into Perl document object. See
 http://ledger-cli.org/ for more on Ledger, the command-line double-entry
 accounting system software.
 
-This module uses L<Log::Any> logging framework.
-
-This module uses L<Moo> object system.
-
 
 =head1 ATTRIBUTES
 
