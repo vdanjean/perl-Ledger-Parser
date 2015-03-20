@@ -9,20 +9,24 @@ use utf8;
 use warnings;
 use Carp;
 
+use Time::Local;
+
 use constant +{
     COL_TYPE => 0,
 
     COL_B_RAW => 1,
 
-    COL_T_DATE  => 1,
-    COL_T_EDATE => 2,
-    COL_T_WS1   => 3,
-    COL_T_STATE => 4,
-    COL_T_WS2   => 5,
-    COL_T_CODE  => 6,
-    COL_T_WS3   => 7,
-    COL_T_DESC  => 8,
-    COL_T_NL    => 9,
+    COL_T_DATE    => 1,
+    COL_T_EDATE   => 2,
+    COL_T_WS1     => 3,
+    COL_T_STATE   => 4,
+    COL_T_WS2     => 5,
+    COL_T_CODE    => 6,
+    COL_T_WS3     => 7,
+    COL_T_DESC    => 8,
+    COL_T_WS4     => 7,
+    COL_T_COMMENT => 8,
+    COL_T_NL      => 9,
 
     COL_P_WS1     => 1,
     COL_P_OPAREN  => 2,
@@ -31,21 +35,58 @@ use constant +{
     COL_P_WS2     => 5,
     COL_P_AMOUNT  => 6,
     COL_P_WS3     => 7,
-    COL_P_NOTE    => 8,
+    COL_P_COMMENT => 8,
     COL_P_NL      => 9,
+
+    COL_C_CHAR    => 1,
+    COL_C_COMMENT => 2,
+    COL_C_NL      => 3,
+
+    COL_TC_WS1     => 1,
+    COL_TC_COMMENT => 2,
+    COL_TC_NL      => 3,
 };
+
+# note: $RE_xxx is capturing, $re_xxx is non-capturing
+our $re_date = qr!(?:\d{4}[/-])?\d{1,2}[/-]\d{1,2}!;
+our $RE_date = qr!(?:(\d{4})[/-])?(\d{1,2})[/-](\d{1,2})!;
 
 our $re_account_part = qr/(?:
                               [^\s:\[\(;]+?[ \t]??[^\s:\[\(;]*?
                           )+?/x; # don't allow double whitespace
 our $re_account = qr/$re_account_part(?::$re_account_part)*/;
-our $re_amount = qr/\d+/;
+our $re_commodity = qr/[A-Za-z_]+|[\$£€¥]/;
+our $re_amount = qr/(?:-?)
+                    (?:$re_commodity)?
+                    \s* (?:-?[0-9,]+\.?[0-9]*)
+                    \s* (?:$re_commodity)?
+                   /x;
+
+say "D: 100USD: ", "100USD" =~ $re_amount;
 
 sub new {
     my ($class, %attrs) = @_;
+
+    $attrs{input_date_format} //= 'YYYY/MM/DD';
+    $attrs{year} //= (localtime)[5] + 1900;
     #$attrs{strict} //= 0; # check valid account names
-    #$attrs{input_date_format} //= 'YYYY/MM/DD';
+
+    # checking
+    $attrs{input_date_format} =~ m!\A(YYYY/MM/DD|YYYY/DD/MM)\z!
+        or croak "Invalid input_date_format: choose YYYY/MM/DD or YYYY/DD/MM";
+
     bless \%attrs, $class;
+}
+
+sub _parse_date {
+    my ($self, $str) = @_;
+    croak "Invalid date '$str'" unless $str =~ /\A(?:$RE_date)\z/;
+
+    if ($self->{input_date_format} eq 'YYYY/MM/DD') {
+        return timelocal(0, 0, 0, $3, $2-1, ($1)-1900);
+    } else {
+        return timelocal(0, 0, 0, $2, $3-1, ($1)-1900);
+    }
 }
 
 sub _err {
@@ -122,7 +163,7 @@ sub _read_string {
 
     my $res = [];
 
-    my $in_xact;
+    my $in_tx;
 
     my @lines = split /^/, $str;
     local $self->{_linum} = 0;
@@ -130,8 +171,10 @@ sub _read_string {
     for my $line (@lines) {
         $self->{_linum}++;
 
-        if ($in_xact && $line !~ /^\s/) {
-            $in_xact = 0;
+        # transaction is broken by an empty/all-whitespace line or a
+        # non-indented line
+        if ($in_tx && $line !~ /\S/ || $line =~ /^\S/) {
+            $in_tx = 0;
         }
 
         # blank line (B)
@@ -145,31 +188,41 @@ sub _read_string {
 
         # transaction line (T)
         if ($line =~ /^\d/) {
-            $line =~ m<^(\d+[/-]\d+[/-]\d+)         # 1) actual date
-                       (?: = (\d+[/-]\d+[/-]\d+))?  # 2) effective date
-                       (?: (\s+) ([!*]))?           # 3) ws 4) state
-                       (?: (\s+) \(([^\)]+)\))?     # 5) ws 6) code
-                       (\s+) (\S.+?)                # 7) ws 8) desc
-                       (\R?)\z                      # 9) nl
+            $line =~ m<^($re_date)                     # 1) actual date
+                       (?: = $re_date)?                # 2) effective date
+                       (?: (\s+) ([!*]) )?             # 3) ws 4) state
+                       (?: (\s+) \(([^\)]+)\) )?       # 5) ws 6) code
+                       (\s+) (\S.+?)                   # 7) ws 8) desc
+                       (?: (\s{2,}) ;(\S.+?) )?        # 9) ws 10) comment
+                       (\R?)\z                         # 11) nl
                       >x
                           or $self->_err("Invalid transaction line syntax");
             push @$res, ['T', $1, $2, $3, $4, $5, $6, $7, $8, $9];
-            $in_xact = 1;
+            $in_tx = 1;
+            next LINE;
+        }
+
+        # comment line (C)
+        if ($line =~ /^([;#%|*])(.*?)(\R?)\z/) {
+            push @$res, ['C', $1, $2, $3];
+            next LINE;
+        }
+
+        # transaction comment (TC)
+        if ($in_tx && $line =~ /^(\s+);(.*?)(\R?)\z/) {
+            push @$res, ['TC', $1, $2, $3];
             next LINE;
         }
 
         # posting (P)
-        # TODO: support @AMOUNT (per-unit posting cost)
-        # TODO: support @@AMOUNT (complete posting cost)
-        if ($in_xact && $line =~ /^\s/) {
-            $line =~ m!^(\s+)              # 1) ws1
-                       (\[|\()?            # 2) oparen
-                       ($re_account)       # 3) account
-                       (\]|\))?            # 4) cparen
-                       (\s{2,})            # 5) ws2
-                       ($re_amount)        # 6) amount
-                       (?: (\s*) ;(.*?))?  # 7) ws 8) note
-                       (\R?)\z             # 9) nl
+        if ($in_tx && $line =~ /^\s/) {
+            $line =~ m!^(\s+)                       # 1) ws1
+                       (\[|\()?                     # 2) oparen
+                       ($re_account)                # 3) account
+                       (\]|\))?                     # 4) cparen
+                       (?: (\s{2,})($re_amount) )?  # 5) ws2 6) amount
+                       (?: (\s*) ;(.*?))?           # 7) ws 8) note
+                       (\R?)\z                      # 9) nl
                       !x
                           or $self->_err("Invalid posting line syntax");
             push @$res, ['P', $1, $2, $3, $4, $5, $6, $7, $8, $9];
@@ -177,6 +230,7 @@ sub _read_string {
         }
 
         $self->_err("Invalid syntax");
+
     }
 
     # make sure we always end with newline
@@ -199,7 +253,10 @@ sub parse { goto &read_string }
 =head1 SYNOPSIS
 
  use Ledger::Parser;
- my $ledgerp = Ledger::Parser->new();
+ my $ledgerp = Ledger::Parser->new(
+     # year              => undef,        # default: current year
+     # input_date_format => 'YYYY/MM/DD', # or 'YYYY/DD/MM',
+ );
 
  # parse a file
  my $journal = $ledgerp->read_file("$ENV{HOME}/money.dat");
@@ -230,32 +287,57 @@ http://ledger-cli.org/ for more on Ledger, the command-line double-entry
 accounting system software.
 
 Ledger 3 can be extended with Python, and this module only supports a subset of
-Ledger format, so you might also want to take a look into the Python extension.
+Ledger syntax, so you might also want to take a look into the Python extension.
 However, this module can also modify/write the journal, so it can be used e.g.
 to insert transactions programmatically (which is my use case and the reason I
 created this module).
 
-This is an inexhaustive list of things that are not supported:
+This is an inexhaustive list of things that are not currently supported:
 
 =over
+
+=item * Costs & prices
+
+For example, things like:
+
+ 2012-04-10 My Broker
+    Assets:Brokerage            10 AAPL @ $50.00
+    Assets:Brokerage:Cash
 
 =item * Automated transaction (line that begins with C<=>)
 
 =item * Periodic transaction (line that begins with C<~>)
 
-=item * Assert command
+=item * Various commands
 
-=item * C command (currency conversion)
+Including but not limited to: assert, C (currency conversion), ...
 
 =back
 
 
 =head1 ATTRIBUTES
 
+=head2 input_date_format => str ('YYYY/MM/DD' or 'YYYY/DD/MM')
+
+Ledger accepts dates in the form of yearless (e.g. 01/02, 3-12) or with 4-digit
+year (e.g. 2015/01/02, 2015-3-12). Month and day can be single- or
+double-digits. Separator is either C<-> or C</>.
+
+When year is omitted, year will be retrieved from the C<year> attribute.
+
+The default format is month before day (C<YYYY/MM/DD>), but you can also use day
+before month (C<YYYY/DD/MM>).
+
+=head2 year => int (default: current year)
+
+Only used when encountering a date without year.
+
+=head2
+
 
 =head1 METHODS
 
-=head2 new()
+=head2 new(%attrs) => obj
 
 Create a new parser instance.
 
