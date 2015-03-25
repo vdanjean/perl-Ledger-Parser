@@ -62,8 +62,6 @@ our $re_amount = qr/(?:-?)
                     \s* (?:$re_commodity)?
                    /x;
 
-say "D: 100USD: ", "100USD" =~ $re_amount;
-
 sub new {
     my ($class, %attrs) = @_;
 
@@ -192,7 +190,7 @@ sub _read_string {
                        (?: = $re_date)?                # 2) effective date
                        (?: (\s+) ([!*]) )?             # 3) ws 4) state
                        (?: (\s+) \(([^\)]+)\) )?       # 5) ws 6) code
-                       (\s+) (\S.+?)                   # 7) ws 8) desc
+                       (\s+) (\S.*?)                   # 7) ws 8) desc
                        (?: (\s{2,}) ;(\S.+?) )?        # 9) ws 10) comment
                        (\R?)\z                         # 11) nl
                       >x
