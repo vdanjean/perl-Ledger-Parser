@@ -62,8 +62,6 @@ our $re_amount = qr/(?:-?)
                     \s* (?:$re_commodity)?
                    /x;
 
-say "D: 100USD: ", "100USD" =~ $re_amount;
-
 sub new {
     my ($class, %attrs) = @_;
 
