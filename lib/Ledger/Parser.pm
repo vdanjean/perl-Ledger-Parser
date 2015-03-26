@@ -9,7 +9,7 @@ use utf8;
 use warnings;
 use Carp;
 
-use Time::Local;
+use Time::Moment;
 
 use constant +{
     COL_TYPE => 0,
@@ -27,6 +27,9 @@ use constant +{
     COL_T_WS4     => 7,
     COL_T_COMMENT => 8,
     COL_T_NL      => 9,
+    COL_T_PARSE_DATE  => 10,
+    COL_T_PARSE_EDATE => 11,
+    COL_T_PARSE_TX    => 12,
 
     COL_P_WS1     => 1,
     COL_P_OPAREN  => 2,
@@ -37,6 +40,7 @@ use constant +{
     COL_P_WS3     => 7,
     COL_P_COMMENT => 8,
     COL_P_NL      => 9,
+    COL_P_PARSE_AMOUNT  => 10,
 
     COL_C_CHAR    => 1,
     COL_C_COMMENT => 2,
@@ -55,11 +59,16 @@ our $re_account_part = qr/(?:
                               [^\s:\[\(;]+?[ \t]??[^\s:\[\(;]*?
                           )+?/x; # don't allow double whitespace
 our $re_account = qr/$re_account_part(?::$re_account_part)*/;
-our $re_commodity = qr/[A-Za-z_]+|[\$£€¥]/;
+our $re_commodity = qr/[A-Z_]+[A-Za-z_]*|[\$£€¥]/;
 our $re_amount = qr/(?:-?)
                     (?:$re_commodity)?
                     \s* (?:-?[0-9,]+\.?[0-9]*)
                     \s* (?:$re_commodity)?
+                   /x;
+our $RE_amount = qr/(-?)
+                    ($re_commodity)?
+                    (\s*) (-?[0-9,]+\.?[0-9]*)
+                    (\s*) ($re_commodity)?
                    /x;
 
 sub new {
@@ -78,13 +87,126 @@ sub new {
 
 sub _parse_date {
     my ($self, $str) = @_;
-    croak "Invalid date '$str'" unless $str =~ /\A(?:$RE_date)\z/;
+    return [400,"Invalid date syntax '$str'"] unless $str =~ /\A(?:$RE_date)\z/;
 
-    if ($self->{input_date_format} eq 'YYYY/MM/DD') {
-        return timelocal(0, 0, 0, $3, $2-1, ($1)-1900);
-    } else {
-        return timelocal(0, 0, 0, $2, $3-1, ($1)-1900);
+    my $tm;
+    eval {
+        if ($self->{input_date_format} eq 'YYYY/MM/DD') {
+            $tm = Time::Moment->new(
+                day => $3,
+                month => $2,
+                year => $1 || $self->{year},
+            );
+        } else {
+            $tm = Time::Moment->new(
+                day => $2,
+                month => $3,
+                year => $1 || $self->{year},
+            );
+        }
+    };
+    if ($@) { return [400, "Invalid date '$str': $@"] }
+    [200, "OK", $tm];
+}
+
+sub _parse_amount {
+    my ($self, $str) = @_;
+    return [400, "Invalid amount syntax '$str'"]
+        unless $str =~ /\A(?:$RE_amount)\z/;
+
+    my ($minsign, $commodity1, $ws1, $num, $ws2, $commodity2) =
+        ($1, $2, $3, $4, $5, $6);
+    if ($commodity1 && $commodity2) {
+        return [400, "Invalid amount '$str' (double commodity)"];
     }
+    $num =~ s/,//g;
+    $num *= -1 if $minsign;
+    return [200, "OK", [
+        $num, # raw number
+        ($commodity1 || $commodity2) // '', # commodity
+        $commodity1 ? "B$ws1" : "A$ws2", # format: B(efore)|A(fter) + spaces
+    ]];
+}
+
+# this routine takes the raw parsed lines and parse a transaction data from it.
+# the _ledger_raw keys are used when we transport the transaction data outside
+# and back in again, we want to be able to reconstruct the original
+# transaction/posting lines if they are not modified exactly (for round-trip
+# purposes).
+sub _parse_tx {
+    my ($self, $parsed, $linum0) = @_;
+
+    my $t_line = $parsed->[$linum0-1];
+    my $tx = {
+        date        => $t_line->[COL_T_PARSE_DATE],
+        description => $t_line->[COL_T_DESC],
+        _ledger_raw => $t_line,
+        postings    => [],
+    };
+    $tx->{edate} = $t_line->[COL_T_PARSE_EDATE] if $t_line->[COL_T_EDATE];
+
+    my $linum = $linum0;
+    while (1) {
+        last if $linum++ > @$parsed-1;
+        my $line = $parsed->[$linum-1];
+        my $type = $line->[COL_TYPE];
+        if ($type eq 'P') {
+            my $oparen = $line->[COL_P_OPAREN] // '';
+            push @{ $tx->{postings} }, {
+                account => $line->[COL_P_ACCOUNT],
+                is_virtual => $oparen eq '(' ? 1 : $oparen eq '[' ? 2 : 0,
+                amount => $line->[COL_P_PARSE_AMOUNT] ?
+                    $line->[COL_P_PARSE_AMOUNT][0] : undef,
+                commodity => $line->[COL_P_PARSE_AMOUNT] ?
+                    $line->[COL_P_PARSE_AMOUNT][1] : undef,
+                _ledger_raw => $line,
+            };
+        } elsif ($type eq 'TC') {
+            # ledger associates a transaction comment with a posting that
+            # precedes it. if there is a transaction comment before any posting,
+            # we will stick it to the _ledger_raw_comments. otherwise, it will
+            # goes to each posting's _ledger_raw_comments.
+            if (@{ $tx->{postings} }) {
+                push @{ $tx->{postings}[-1]{_ledger_raw_comments} }, $line;
+            } else {
+                push @{ $tx->{_ledger_raw_comments} }, $line;
+            }
+        } else {
+            last;
+        }
+    }
+
+    # some sanity checks for the transaction
+  CHECK:
+    {
+        my $num_postings = @{$tx->{postings}};
+        last CHECK if !$num_postings;
+        if ($num_postings == 1 && !defined(!$tx->{postings}[0]{amount})) {
+            #$self->_err("Posting amount cannot be null");
+            # ledger allows this
+            last CHECK;
+        }
+        my $num_nulls = 0;
+        my %bals; # key = commodity
+        for my $p (@{ $tx->{postings} }) {
+            if (!defined($p->{amount})) {
+                $num_nulls++;
+                next;
+            }
+            $bals{$p->{commodity}} += $p->{amount};
+        }
+        last CHECK if $num_nulls == 1;
+        if ($num_nulls) {
+            $self->_err("There can only be one posting with null amount");
+        }
+        for (keys %bals) {
+            $self->_err("Transaction not balanced, " .
+                            (-$bals{$_}) . ($_ ? " $_":"")." needed")
+                if $bals{$_} != 0;
+        }
+    }
+
+    [200, "OK", $tx];
 }
 
 sub _err {
@@ -170,8 +292,13 @@ sub _read_string {
         $self->{_linum}++;
 
         # transaction is broken by an empty/all-whitespace line or a
-        # non-indented line
-        if ($in_tx && $line !~ /\S/ || $line =~ /^\S/) {
+        # non-indented line. once we found a complete transaction, parse it.
+        if ($in_tx && ($line !~ /\S/ || $line =~ /^\S/)) {
+            my $parse_tx = $self->_parse_tx($res, $in_tx);
+            if ($parse_tx->[0] != 200) {
+                $self->_err($parse_tx->[1]);
+            }
+            $res->[$in_tx - 1][COL_T_PARSE_TX] = $parse_tx->[2];
             $in_tx = 0;
         }
 
@@ -187,7 +314,7 @@ sub _read_string {
         # transaction line (T)
         if ($line =~ /^\d/) {
             $line =~ m<^($re_date)                     # 1) actual date
-                       (?: = $re_date)?                # 2) effective date
+                       (?: = ($re_date))?              # 2) effective date
                        (?: (\s+) ([!*]) )?             # 3) ws 4) state
                        (?: (\s+) \(([^\)]+)\) )?       # 5) ws 6) code
                        (\s+) (\S.*?)                   # 7) ws 8) desc
@@ -195,8 +322,24 @@ sub _read_string {
                        (\R?)\z                         # 11) nl
                       >x
                           or $self->_err("Invalid transaction line syntax");
-            push @$res, ['T', $1, $2, $3, $4, $5, $6, $7, $8, $9];
-            $in_tx = 1;
+            my $parsed_line = ['T', $1, $2, $3, $4, $5, $6, $7, $8, $9];
+
+            my $parse_date = $self->_parse_date($1);
+            if ($parse_date->[0] != 200) {
+                $self->_err($parse_date->[1]);
+            }
+            $parsed_line->[COL_T_PARSE_DATE] = $parse_date->[2];
+
+            if ($2) {
+                my $parse_edate = $self->_parse_date($2);
+                if ($parse_edate->[0] != 200) {
+                    $self->_err($parse_edate->[1]);
+                }
+                $parsed_line->[COL_T_PARSE_EDATE] = $parse_edate->[2];
+            }
+
+            $in_tx = $self->{_linum};
+            push @$res, $parsed_line;
             next LINE;
         }
 
@@ -223,7 +366,23 @@ sub _read_string {
                        (\R?)\z                      # 9) nl
                       !x
                           or $self->_err("Invalid posting line syntax");
-            push @$res, ['P', $1, $2, $3, $4, $5, $6, $7, $8, $9];
+            # brace must match
+            my ($oparen, $cparen) = ($2 // '', $4 // '');
+            unless (!$oparen && !$cparen ||
+                        $oparen eq '[' && $cparen eq ']' ||
+                            $oparen eq '(' && $cparen eq ')') {
+                $self->_err("Parentheses/braces around account don't match");
+            }
+            my $parsed_line = ['P', $1, $oparen, $3, $cparen,
+                               $5, $6, $7, $8, $9];
+            if (defined $6) {
+                my $parse_amount = $self->_parse_amount($6);
+                if ($parse_amount->[0] != 200) {
+                    $self->_err($parse_amount->[1]);
+                }
+                $parsed_line->[COL_P_PARSE_AMOUNT] = $parse_amount->[2];
+            }
+            push @$res, $parsed_line;
             next LINE;
         }
 
@@ -237,13 +396,17 @@ sub _read_string {
             unless $res->[-1][-1] =~ /\R\z/;
     }
 
-    require Config::IOD::Document;
-    Config::IOD::Document->new(_parser=>$self, _parsed=>$res);
-}
+    if ($in_tx) {
+        my $parse_tx = $self->_parse_tx($res, $in_tx);
+        if ($parse_tx->[0] != 200) {
+            $self->_err($parse_tx->[1]);
+        }
+        $res->[$in_tx - 1][COL_T_PARSE_TX] = $parse_tx->[2];
+    }
 
-# old names, to be removed in the future
-sub parse_file { goto &read_file }
-sub parse { goto &read_string }
+    require Ledger::Journal;
+    Ledger::Journal->new(_parser=>$self, _parsed=>$res);
+}
 
 1;
 # ABSTRACT: Parse Ledger journals
@@ -288,7 +451,7 @@ Ledger 3 can be extended with Python, and this module only supports a subset of
 Ledger syntax, so you might also want to take a look into the Python extension.
 However, this module can also modify/write the journal, so it can be used e.g.
 to insert transactions programmatically (which is my use case and the reason I
-created this module).
+first created this module).
 
 This is an inexhaustive list of things that are not currently supported:
 
@@ -302,9 +465,11 @@ For example, things like:
     Assets:Brokerage            10 AAPL @ $50.00
     Assets:Brokerage:Cash
 
-=item * Automated transaction (line that begins with C<=>)
+=item * Automated transaction
 
-=item * Periodic transaction (line that begins with C<~>)
+=item * Periodic transaction
+
+=item * Expression
 
 =item * Various commands
 

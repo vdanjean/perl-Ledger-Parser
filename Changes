@@ -1,5 +1,19 @@
 Revision history for Ledger-Parser.
 
+0.04    2015-03-26 (PERLANCAR)
+
+        [INCOMPATIBLE CHANGES]
+
+        - Rewrite implementation, interface is now different. Parsing is now
+          closer to the spec of Ledger 3, but still only a subset is supported.
+          The goal of this module is to be able to parse a Ledger journal, load
+          it as Perl object, modify the journal (e.g. add/modify/delete
+          transactions) and write it back to string/file (and be round-trip
+          about it, preserving whitespaces/comments). Currently the basic parser
+          is done, but no journal-modifying methods have been (re-)added. Stay
+          tuned.
+
+
 0.03    2011-11-01 (SHARYANTO)
 
         - No functional changes. Add missing dep to DateTime [ct].
