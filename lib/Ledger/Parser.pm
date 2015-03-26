@@ -293,7 +293,7 @@ Ledger 3 can be extended with Python, and this module only supports a subset of
 Ledger syntax, so you might also want to take a look into the Python extension.
 However, this module can also modify/write the journal, so it can be used e.g.
 to insert transactions programmatically (which is my use case and the reason I
-created this module).
+first created this module).
 
 This is an inexhaustive list of things that are not currently supported:
 
@@ -307,9 +307,11 @@ For example, things like:
     Assets:Brokerage            10 AAPL @ $50.00
     Assets:Brokerage:Cash
 
-=item * Automated transaction (line that begins with C<=>)
+=item * Automated transaction
 
-=item * Periodic transaction (line that begins with C<~>)
+=item * Periodic transaction
+
+=item * Expression
 
 =item * Various commands
 
