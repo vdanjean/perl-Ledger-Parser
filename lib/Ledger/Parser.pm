@@ -55,7 +55,7 @@ our $re_account_part = qr/(?:
                               [^\s:\[\(;]+?[ \t]??[^\s:\[\(;]*?
                           )+?/x; # don't allow double whitespace
 our $re_account = qr/$re_account_part(?::$re_account_part)*/;
-our $re_commodity = qr/[A-Za-z_]+|[\$£€¥]/;
+our $re_commodity = qr/[A-Z_]+|[\$£€¥]/;
 our $re_amount = qr/(?:-?)
                     (?:$re_commodity)?
                     \s* (?:-?[0-9,]+\.?[0-9]*)
