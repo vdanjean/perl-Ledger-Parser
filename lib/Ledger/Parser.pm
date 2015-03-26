@@ -113,6 +113,7 @@ sub _parse_amount {
     my ($self, $str) = @_;
     return [400, "Invalid amount syntax '$str'"]
         unless $str =~ /\A(?:$RE_amount)\z/;
+
     my ($minsign, $commodity1, $ws1, $num, $ws2, $commodity2) =
         ($1, $2, $3, $4, $5, $6);
     if ($commodity1 && $commodity2) {
