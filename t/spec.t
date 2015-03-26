@@ -4,7 +4,7 @@ use 5.010;
 use strict;
 use warnings;
 
-use File::ShareDir ':ALL';
+use File::ShareDir::Tarball qw(dist_dir);
 use File::Slurper 'read_text';
 use Ledger::Parser;
 #use Test::Differences;

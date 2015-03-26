@@ -122,7 +122,7 @@ sub _parse_amount {
     $num *= -1 if $minsign;
     return [200, "OK", [
         $num, # raw number
-        $commodity1 || $commodity2, # commodity
+        ($commodity1 || $commodity2) // '', # commodity
         $commodity1 ? "B$ws1" : "A$ws2", # format: B(efore)|A(fter) + spaces
     ]];
 }
@@ -144,10 +144,65 @@ sub _parse_tx {
     };
     $tx->{edate} = $t_line->[COL_T_PARSE_EDATE] if $t_line->[COL_T_EDATE];
 
-    my $linum = $linum0+1;
+    my $linum = $linum0;
     while (1) {
-        last if $linum > @$parsed-1;
-        $linum++;
+        last if $linum++ > @$parsed-1;
+        my $line = $parsed->[$linum-1];
+        my $type = $line->[COL_TYPE];
+        if ($type eq 'P') {
+            my $oparen = $line->[COL_P_OPAREN] // '';
+            push @{ $tx->{postings} }, {
+                account => $line->[COL_P_ACCOUNT],
+                is_virtual => $oparen eq '(' ? 1 : $oparen eq '[' ? 2 : 0,
+                amount => $line->[COL_P_PARSE_AMOUNT] ?
+                    $line->[COL_P_PARSE_AMOUNT][0] : undef,
+                commodity => $line->[COL_P_PARSE_AMOUNT] ?
+                    $line->[COL_P_PARSE_AMOUNT][1] : undef,
+                _ledger_raw => $line,
+            };
+        } elsif ($type eq 'TC') {
+            # ledger associates a transaction comment with a posting that
+            # precedes it. if there is a transaction comment before any posting,
+            # we will stick it to the _ledger_raw_comments. otherwise, it will
+            # goes to each posting's _ledger_raw_comments.
+            if (@{ $tx->{postings} }) {
+                push @{ $tx->{postings}[-1]{_ledger_raw_comments} }, $line;
+            } else {
+                push @{ $tx->{_ledger_raw_comments} }, $line;
+            }
+        } else {
+            last;
+        }
+    }
+
+    # some sanity checks for the transaction
+  CHECK:
+    {
+        my $num_postings = @{$tx->{postings}};
+        last CHECK if !$num_postings;
+        if ($num_postings == 1 && !defined(!$tx->{postings}[0]{amount})) {
+            #$self->_err("Posting amount cannot be null");
+            # ledger allows this
+            last CHECK;
+        }
+        my $num_nulls = 0;
+        my %bals; # key = commodity
+        for my $p (@{ $tx->{postings} }) {
+            if (!defined($p->{amount})) {
+                $num_nulls++;
+                next;
+            }
+            $bals{$p->{commodity}} += $p->{amount};
+        }
+        last CHECK if $num_nulls == 1;
+        if ($num_nulls) {
+            $self->_err("There can only be one posting with null amount");
+        }
+        for (keys %bals) {
+            $self->_err("Transaction not balanced, " .
+                            (-$bals{$_}) . ($_ ? " $_":"")." needed")
+                if $bals{$_} != 0;
+        }
     }
 
     [200, "OK", $tx];
@@ -310,7 +365,15 @@ sub _read_string {
                        (\R?)\z                      # 9) nl
                       !x
                           or $self->_err("Invalid posting line syntax");
-            my $parsed_line = ['P', $1, $2, $3, $4, $5, $6, $7, $8, $9];
+            # brace must match
+            my ($oparen, $cparen) = ($2 // '', $4 // '');
+            unless (!$oparen && !$cparen ||
+                        $oparen eq '[' && $cparen eq ']' ||
+                            $oparen eq '(' && $cparen eq ')') {
+                $self->_err("Parentheses/braces around account don't match");
+            }
+            my $parsed_line = ['P', $1, $oparen, $3, $cparen,
+                               $5, $6, $7, $8, $9];
             if (defined $6) {
                 my $parse_amount = $self->_parse_amount($6);
                 if ($parse_amount->[0] != 200) {
@@ -340,8 +403,8 @@ sub _read_string {
         $res->[$in_tx - 1][COL_T_PARSE_TX] = $parse_tx->[2];
     }
 
-    require Config::IOD::Document;
-    Config::IOD::Document->new(_parser=>$self, _parsed=>$res);
+    require Ledger::Journal;
+    Ledger::Journal->new(_parser=>$self, _parsed=>$res);
 }
 
 # old names, to be removed in the future
