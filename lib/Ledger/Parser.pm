@@ -408,10 +408,6 @@ sub _read_string {
     Ledger::Journal->new(_parser=>$self, _parsed=>$res);
 }
 
-# old names, to be removed in the future
-sub parse_file { goto &read_file }
-sub parse { goto &read_string }
-
 1;
 # ABSTRACT: Parse Ledger journals
 
