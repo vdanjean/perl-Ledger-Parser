@@ -29,6 +29,7 @@ use constant +{
     COL_T_NL      => 9,
     COL_T_PARSE_DATE  => 10,
     COL_T_PARSE_EDATE => 11,
+    COL_T_PARSE_TX    => 12,
 
     COL_P_WS1     => 1,
     COL_P_OPAREN  => 2,
@@ -105,7 +106,7 @@ sub _parse_date {
         }
     };
     if ($@) { return [400, "Invalid date '$str': $@"] }
-    [200, $tm];
+    [200, "OK", $tm];
 }
 
 sub _parse_amount {
@@ -119,11 +120,37 @@ sub _parse_amount {
     }
     $num =~ s/,//g;
     $num *= -1 if $minsign;
-    return [200, [
+    return [200, "OK", [
         $num, # raw number
         $commodity1 || $commodity2, # commodity
         $commodity1 ? "B$ws1" : "A$ws2", # format: B(efore)|A(fter) + spaces
     ]];
+}
+
+# this routine takes the raw parsed lines and parse a transaction data from it.
+# the _ledger_raw keys are used when we transport the transaction data outside
+# and back in again, we want to be able to reconstruct the original
+# transaction/posting lines if they are not modified exactly (for round-trip
+# purposes).
+sub _parse_tx {
+    my ($self, $parsed, $linum0) = @_;
+
+    my $t_line = $parsed->[$linum0-1];
+    my $tx = {
+        date        => $t_line->[COL_T_PARSE_DATE],
+        description => $t_line->[COL_T_DESC],
+        _ledger_raw => $t_line,
+        postings    => [],
+    };
+    $tx->{edate} = $t_line->[COL_T_PARSE_EDATE] if $t_line->[COL_T_EDATE];
+
+    my $linum = $linum0+1;
+    while (1) {
+        last if $linum > @$parsed-1;
+        $linum++;
+    }
+
+    [200, "OK", $tx];
 }
 
 sub _err {
@@ -209,8 +236,13 @@ sub _read_string {
         $self->{_linum}++;
 
         # transaction is broken by an empty/all-whitespace line or a
-        # non-indented line
-        if ($in_tx && $line !~ /\S/ || $line =~ /^\S/) {
+        # non-indented line. once we found a complete transaction, parse it.
+        if ($in_tx && ($line !~ /\S/ || $line =~ /^\S/)) {
+            my $parse_tx = $self->_parse_tx($res, $in_tx);
+            if ($parse_tx->[0] != 200) {
+                $self->_err($parse_tx->[1]);
+            }
+            $res->[$in_tx - 1][COL_T_PARSE_TX] = $parse_tx->[2];
             $in_tx = 0;
         }
 
@@ -240,17 +272,17 @@ sub _read_string {
             if ($parse_date->[0] != 200) {
                 $self->_err($parse_date->[1]);
             }
-            $parsed_line->[COL_T_PARSE_DATE] = $parse_date->[1];
+            $parsed_line->[COL_T_PARSE_DATE] = $parse_date->[2];
 
             if ($2) {
                 my $parse_edate = $self->_parse_date($2);
                 if ($parse_edate->[0] != 200) {
                     $self->_err($parse_edate->[1]);
                 }
-                $parsed_line->[COL_T_PARSE_EDATE] = $parse_edate->[1];
+                $parsed_line->[COL_T_PARSE_EDATE] = $parse_edate->[2];
             }
 
-            $in_tx = 1;
+            $in_tx = $self->{_linum};
             push @$res, $parsed_line;
             next LINE;
         }
@@ -284,7 +316,7 @@ sub _read_string {
                 if ($parse_amount->[0] != 200) {
                     $self->_err($parse_amount->[1]);
                 }
-                $parsed_line->[COL_P_PARSE_AMOUNT] = $parse_amount->[1];
+                $parsed_line->[COL_P_PARSE_AMOUNT] = $parse_amount->[2];
             }
             push @$res, $parsed_line;
             next LINE;
@@ -298,6 +330,14 @@ sub _read_string {
     if (@$res) {
         $res->[-1][-1] .= "\n"
             unless $res->[-1][-1] =~ /\R\z/;
+    }
+
+    if ($in_tx) {
+        my $parse_tx = $self->_parse_tx($res, $in_tx);
+        if ($parse_tx->[0] != 200) {
+            $self->_err($parse_tx->[1]);
+        }
+        $res->[$in_tx - 1][COL_T_PARSE_TX] = $parse_tx->[2];
     }
 
     require Config::IOD::Document;
