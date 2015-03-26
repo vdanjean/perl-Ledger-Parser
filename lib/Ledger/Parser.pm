@@ -9,7 +9,7 @@ use utf8;
 use warnings;
 use Carp;
 
-use Time::Local;
+use Time::Moment;
 
 use constant +{
     COL_TYPE => 0,
@@ -27,6 +27,8 @@ use constant +{
     COL_T_WS4     => 7,
     COL_T_COMMENT => 8,
     COL_T_NL      => 9,
+    COL_T_PARSE_DATE  => 10,
+    COL_T_PARSE_EDATE => 11,
 
     COL_P_WS1     => 1,
     COL_P_OPAREN  => 2,
@@ -37,6 +39,7 @@ use constant +{
     COL_P_WS3     => 7,
     COL_P_COMMENT => 8,
     COL_P_NL      => 9,
+    COL_P_PARSE_AMOUNT  => 10,
 
     COL_C_CHAR    => 1,
     COL_C_COMMENT => 2,
@@ -63,8 +66,8 @@ our $re_amount = qr/(?:-?)
                    /x;
 our $RE_amount = qr/(-?)
                     ($re_commodity)?
-                    \s* (-?[0-9,]+\.?[0-9]*)
-                    \s* ($re_commodity)?
+                    (\s*) (-?[0-9,]+\.?[0-9]*)
+                    (\s*) ($re_commodity)?
                    /x;
 
 sub new {
@@ -83,13 +86,44 @@ sub new {
 
 sub _parse_date {
     my ($self, $str) = @_;
-    croak "Invalid date '$str'" unless $str =~ /\A(?:$RE_date)\z/;
+    return [400,"Invalid date syntax '$str'"] unless $str =~ /\A(?:$RE_date)\z/;
 
-    if ($self->{input_date_format} eq 'YYYY/MM/DD') {
-        return timelocal(0, 0, 0, $3, $2-1, ($1)-1900);
-    } else {
-        return timelocal(0, 0, 0, $2, $3-1, ($1)-1900);
+    my $tm;
+    eval {
+        if ($self->{input_date_format} eq 'YYYY/MM/DD') {
+            $tm = Time::Moment->new(
+                day => $3,
+                month => $2,
+                year => $1 || $self->{year},
+            );
+        } else {
+            $tm = Time::Moment->new(
+                day => $2,
+                month => $3,
+                year => $1 || $self->{year},
+            );
+        }
+    };
+    if ($@) { return [400, "Invalid date '$str': $@"] }
+    [200, $tm];
+}
+
+sub _parse_amount {
+    my ($self, $str) = @_;
+    return [400, "Invalid amount syntax '$str'"]
+        unless $str =~ /\A(?:$RE_amount)\z/;
+    my ($minsign, $commodity1, $ws1, $num, $ws2, $commodity2) =
+        ($1, $2, $3, $4, $5, $6);
+    if ($commodity1 && $commodity2) {
+        return [400, "Invalid amount '$str' (double commodity)"];
     }
+    $num =~ s/,//g;
+    $num *= -1 if $minsign;
+    return [200, [
+        $num, # raw number
+        $commodity1 || $commodity2, # commodity
+        $commodity1 ? "B$ws1" : "A$ws2", # format: B(efore)|A(fter) + spaces
+    ]];
 }
 
 sub _err {
@@ -192,7 +226,7 @@ sub _read_string {
         # transaction line (T)
         if ($line =~ /^\d/) {
             $line =~ m<^($re_date)                     # 1) actual date
-                       (?: = $re_date)?                # 2) effective date
+                       (?: = ($re_date))?              # 2) effective date
                        (?: (\s+) ([!*]) )?             # 3) ws 4) state
                        (?: (\s+) \(([^\)]+)\) )?       # 5) ws 6) code
                        (\s+) (\S.*?)                   # 7) ws 8) desc
@@ -200,8 +234,24 @@ sub _read_string {
                        (\R?)\z                         # 11) nl
                       >x
                           or $self->_err("Invalid transaction line syntax");
-            push @$res, ['T', $1, $2, $3, $4, $5, $6, $7, $8, $9];
+            my $parsed_line = ['T', $1, $2, $3, $4, $5, $6, $7, $8, $9];
+
+            my $parse_date = $self->_parse_date($1);
+            if ($parse_date->[0] != 200) {
+                $self->_err($parse_date->[1]);
+            }
+            $parsed_line->[COL_T_PARSE_DATE] = $parse_date->[1];
+
+            if ($2) {
+                my $parse_edate = $self->_parse_date($2);
+                if ($parse_edate->[0] != 200) {
+                    $self->_err($parse_edate->[1]);
+                }
+                $parsed_line->[COL_T_PARSE_EDATE] = $parse_edate->[1];
+            }
+
             $in_tx = 1;
+            push @$res, $parsed_line;
             next LINE;
         }
 
@@ -228,7 +278,15 @@ sub _read_string {
                        (\R?)\z                      # 9) nl
                       !x
                           or $self->_err("Invalid posting line syntax");
-            push @$res, ['P', $1, $2, $3, $4, $5, $6, $7, $8, $9];
+            my $parsed_line = ['P', $1, $2, $3, $4, $5, $6, $7, $8, $9];
+            if (defined $6) {
+                my $parse_amount = $self->_parse_amount($6);
+                if ($parse_amount->[0] != 200) {
+                    $self->_err($parse_amount->[1]);
+                }
+                $parsed_line->[COL_P_PARSE_AMOUNT] = $parse_amount->[1];
+            }
+            push @$res, $parsed_line;
             next LINE;
         }
 
