@@ -395,12 +395,6 @@ sub _read_string {
 
     }
 
-    # make sure we always end with newline
-    if (@$res) {
-        $res->[-1][-1] .= "\n"
-            unless $res->[-1][-1] =~ /\R\z/;
-    }
-
     if ($in_tx) {
         my $parse_tx = $self->_parse_tx($res, $in_tx);
         if ($parse_tx->[0] != 200) {
