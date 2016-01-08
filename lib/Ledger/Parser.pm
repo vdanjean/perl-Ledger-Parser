@@ -10,6 +10,7 @@ use warnings;
 use Carp;
 
 use Time::Moment;
+use Math::Decimal qw(dec_add);
 
 use constant +{
     COL_TYPE => 0,
@@ -193,7 +194,11 @@ sub _parse_tx {
                 $num_nulls++;
                 next;
             }
-            $bals{$p->{commodity}} += $p->{amount};
+	    if (defined($bals{$p->{commodity}})) {
+		$bals{$p->{commodity}} = dec_add($bals{$p->{commodity}}, $p->{amount});
+	    } else {
+		$bals{$p->{commodity}} = $p->{amount};
+	    }
         }
         last CHECK if $num_nulls == 1;
         if ($num_nulls) {
