@@ -5,16 +5,76 @@ use utf8;
 #use Carp;
 use Path::Class::File;
 
-has 'linenum' => (
+has 'lineno' => (
     is       => 'ro',
     isa      => 'Int',
-    writer   => '_set_linenum',
-    default  => 0,
+    writer   => '_set_lineno',
+    predicate => 'has_lineno',
     );
 
-sub _inc_linenum {
+has 'filename' => (
+    is       => 'ro',
+    isa      => 'Str',
+    writer   => '_set_filename',
+    predicate => 'has_filename',
+    );
+
+has 'parent' => (
+    is       => 'ro',
+    isa      => 'Maybe[LedgerStr]',
+    writer   => '_set_parent',
+    predicate => 'has_parent',
+    clearer  => '_unset_parent',
+    );
+
+sub id {
+    my $self=shift;
+
+    return undef if not $self->has_filename;
+    if ($self->has_lineno) {
+	return $self->filename.':'.$self->lineno.':';
+    } else {
+	return $self->filename.':';
+    }
+}
+
+sub parent_with_id {
+    my $self=shift;
+
+    my $parent=$self->parent;
+    while(defined($parent) && not defined($parent->id)) {
+	$parent=$parent->parent;
+    }
+    return $parent;
+}
+
+sub error_prefix {
     my $self = shift;
-    $self->_set_linenum($self->linenum + 1);
+    my $id_parser=$self;
+    my $suffix="";
+    while (defined($id_parser) and not defined($id_parser->id)) {
+	$id_parser=$id_parser->parent;
+    }
+    if (not defined($id_parser)) {
+	return "<>: ";
+    } else {
+	$suffix = $id_parser->id.' ';
+    }
+    my $parent=$self->parent_with_id;
+    return $suffix if not defined($parent);
+
+    my $prefix="In file included from ".$parent->id."\n";
+    $parent=$parent->parent_with_id;
+    while (defined($parent)) {
+	$prefix .= '                 from '.$parent->id."\n";
+	$parent=$parent->parent_with_id;
+    }
+    return $prefix.$suffix;
+}
+
+sub _inc_lineno {
+    my $self = shift;
+    $self->_set_lineno($self->lineno + 1);
 }
 
 has 'eof' => (
@@ -40,7 +100,7 @@ before 'next_line' => sub {
 	my $fh=$self->_fh;
 	my $line=<$fh>;
 	if (defined($line)) {
-	    $self->_inc_linenum;
+	    $self->_inc_lineno;
 	    $self->_set_next_line($line);
 	} else {
 	    $self->_set_eof(1);
@@ -48,6 +108,16 @@ before 'next_line' => sub {
 	}
     }
 };
+
+has '_fh' => (
+    is       => 'rw',
+    isa      => 'FileHandle',
+    );
+
+has '_type' => (
+    is       => 'rw',
+    isa      => 'Str',
+    );
 
 sub pop_line {
     my $self = shift;
@@ -61,39 +131,10 @@ sub give_back_next_line {
     my $line = shift;
 
     if ($self->_has_next_line || $self->eof) {
-	$self->_error("No way to give back next line in parser");
+	$self->_error("No way to give back previous line in parser when next one is loaded");
     }
     $self->_set_next_line($line);
-
 }    
-
-has '_fh' => (
-    is       => 'rw',
-    isa      => 'FileHandle',
-    );
-
-has 'file' => (
-    is       => 'ro',
-    isa      => 'Path::Class::File',
-    writer   => '_set_file',
-    required => 1,
-    #coerce   => 1,
-    trigger  => sub {
-	my ( $self, $filename, $old_filename ) = @_;
-	if (defined($self->_fh)) {
-	    $self->_fh->close();
-	}
-	open my $fh, "<", $filename
-	    or $self->_error("can't open file '$filename': $!\n");
-	binmode($fh, ":utf8");
-	$self->_fh($fh);
-    },
-    );
-
-sub error_prefix {
-    my $self = shift;
-    return $self->file.":".$self->linenum.": ";
-}
 
 sub _error {
     my $self= shift;
@@ -117,6 +158,41 @@ around BUILDARGS => sub {
     }
     return $class->$orig(%hash);
 };
+
+sub BUILD {
+    my $self = shift;
+    my $args = shift;
+
+    if (exists($args->{'file'})) {
+	my $filename=$args->{'file'};
+	open my $fh, "<", $filename
+	    or $self->_error("can't open file '$filename': $!\n");
+	binmode($fh, ":utf8");
+	$self->_fh($fh);
+	$self->_set_lineno(0);
+	$self->_set_filename("$filename");
+	$self->_type('file');
+    } elsif (exists($args->{'string'})) {
+	my $content=$args->{'string'};
+	open my $fh, "<", \$content;
+	binmode($fh, ":utf8");
+	$self->_fh($fh);
+	$self->_type('string');
+    }
+    $self->_set_lineno($args->{'lineno'} - 1) if exists $args->{'lineno'};
+    $self->_set_filename($args->{'filename'}) if exists $args->{'filename'};
+    if (not($self->has_parent || $self->has_filename)) {
+	die "Anonymous parser cannot be instanciated";
+    }
+}
+
+sub newSubParser {
+    my $self=shift;
+    return $self->new(
+	'parent' => $self,
+	@_,
+	);
+}
 
 1;
 # ABSTRACT: Parse Ledger journals
