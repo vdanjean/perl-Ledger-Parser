@@ -233,14 +233,16 @@ before 'load_from_parser' => sub {
     }
     my $parsed_date=$self->_parse_date($1);
     if ($parsed_date->[0] != 200) {
-	$self->_err($parsed_date->[1]);
+	$self->_cached_text($line);
+	$self->_err($parser->error_prefix.$parsed_date->[1]);
     }
     $self->date($parsed_date->[1]);
 
     if (defined($2)) {
 	$parsed_date=$self->_parse_date($2);
 	if ($parsed_date->[0] != 200) {
-	    $self->_err($parsed_date->[1]);
+	    $self->_cached_text($line);
+	    $self->_err($parser->error_prefix.$parsed_date->[1]);
 	}
 	$self->auxdate($parsed_date->[1]);
     }
@@ -375,7 +377,7 @@ sub _err {
         "",
         #@{ $self->{_include_stack} } ? "$self->{_include_stack}[0] " : "",
         #"line $self->{_linum}: ",
-        $msg." in\n".$self->as_string
+        $msg#." in\n".$self->as_string
     );
 }
 
