@@ -7,30 +7,39 @@ use warnings;
 use File::ShareDir::Tarball qw(dist_dir);
 use File::Slurper 'read_text';
 use Ledger::Parser;
+use Ledger::Journal;
 #use Test::Differences;
 use Test::Exception;
 use Test::More 0.98;
+use Test::LongString;
 
 my $dir = dist_dir('Ledger-Examples');
 diag ".dat files are at $dir";
 
-my $parser = Ledger::Parser->new;
+#my $parser = Ledger::Parser->new;
 
 my @files = glob "$dir/examples/*.dat";
-diag explain \@files;
+#diag explain \@files;
 
 for my $file (@files) {
     next if $file =~ /TODO-/;
+    diag explain $file;
     subtest "file $file" => sub {
         if ($file =~ /invalid-/) {
-            dies_ok { $parser->read_file($file) } "dies";
+            dies_ok { Ledger::Journal->new('parser' => Ledger::Parser->new('file' => $file))->validate; } "dies";
         } else {
-            #my $orig_content = read_text($file);
             my $journal;
-            lives_ok { $journal = $parser->read_file($file) } "lives"
+            lives_ok { $journal = Ledger::Journal->new('parser' => Ledger::Parser->new('file' => $file)); $journal->as_string; } "lives"
                 or return;
-            #eq_or_diff $journal->as_string, $orig_content, "round-trip";
         };
+    };
+    if (0 && $file !~ /invalid-/
+	) {
+	my $orig_content = read_text($file);
+	my $journal = Ledger::Journal->new('parser' => Ledger::Parser->new('file' => $file));
+	is_string($journal->as_string, $orig_content);
+	$journal->cleanup;
+	is_string_nows($journal->as_string, $orig_content);
     }
 }
 
