@@ -19,6 +19,12 @@ has '+elements' => (
     isa      => 'ArrayRef[Ledger::Journal::Element]',
     );
 
+has 'config' => (
+    is         => 'rw',
+    does       => 'Ledger::Role::Config',
+    required   => 1,
+    );
+
 sub _doElementKindsRegistration {
     my $self = shift;
     #print "registering\n";
@@ -36,6 +42,11 @@ sub as_string {
     my $self = shift;
     $self->validate;
     return $self->_as_string;
+}
+
+sub journal {
+    my $self = shift;
+    return $self;
 }
 
 1;

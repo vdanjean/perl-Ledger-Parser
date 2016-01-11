@@ -8,5 +8,15 @@ has 'parent' => (
     weak_ref  => 1,
     );
 
+sub journal {
+    my $self = shift;
+    return $self->parent->journal;
+}
+
+sub config {
+    my $self = shift;
+    return $self->journal->config;
+}
+
 1;
 

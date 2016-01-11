@@ -201,8 +201,7 @@ before 'load_from_reader' => sub {
 
 sub compute_text {
     my $self = shift;
-    my $postingFormat =
-	'    @{account:%-35s}  @{amount:%10.2f:%10s:%7d   }@{commodity: %-3s} @{note:%s}';
+    my $postingFormat = $self->config->posting_format;
     my @formatParams=();
 
     push @formatParams, Ledger::Util->buildFormatParam(

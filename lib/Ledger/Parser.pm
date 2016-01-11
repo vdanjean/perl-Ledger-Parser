@@ -1,9 +1,12 @@
 package Ledger::Parser;
 use Moose;
 use namespace::sweep;
-use Moose::Util::TypeConstraints;
 use Ledger::Util::Reader;
 use Ledger::Journal;
+
+with (
+    'Ledger::Role::Config',
+    );
 
 # DATE
 # VERSION
@@ -11,18 +14,6 @@ use Ledger::Journal;
 use 5.010001;
 use utf8;
 use Carp;
-
-has 'input_date_format' => (
-    is          => 'rw',
-    isa         => enum([qw[ YYYY/MM/DD YYYY/DD/MM ]]),
-    default     => "YYYY/MM/DD",
-    );
-
-has 'year' => (
-    is          => 'rw',
-    isa         => 'Num',
-    default     => (localtime)[5] + 1900,
-    );
 
 has 'validate' => (
     is          => 'rw',
@@ -33,6 +24,7 @@ has 'validate' => (
 sub read_file {
     my ($self, $filename) = @_;
     my $journal=Ledger::Journal->new(
+	'config' => $self,
 	'reader' => Ledger::Util::Reader->new(
 	    'file' => $filename,
 	),
@@ -44,6 +36,7 @@ sub read_file {
 sub read_string {
     my ($self, $str) = @_;
     my $journal=Ledger::Journal->new(
+	'config' => $self,
 	'reader' => Ledger::Util::Reader(
 	    'string' => $str,
 	),

@@ -27,21 +27,6 @@ has '+elements' => (
     isa      => 'ArrayRef[Ledger::Transaction::Element]',
     );
 
-# TODO: value should come from config
-sub input_date_format {
-    my $self = shift;
-    return '%Y-%m-%d';
-}
-sub date_format {
-    my $self = shift;
-    return '%Y-%m-%d';
-}
-
-sub year {
-    my $self = shift;
-    return (localtime)[5] + 1900;
-}
-
 has 'date' => (
     is       => 'rw',
     isa      => 'Time::Piece',
@@ -175,29 +160,29 @@ sub _parse_date {
 	# Argh : Time::Moment is doing a better validation
 	# but Time::Piece allow any format (as --input-date-format in ledger)
 	if (1) {
-	    if ($self->input_date_format eq 'YYYY/DD/MM') {
+	    if ($self->config->input_date_format eq 'YYYY/DD/MM') {
 		$tm = Time::Moment->new(
 		    day => $2,
 		    month => $3,
-		    year => $1 || $self->year,
+		    year => $1 || $self->config->year,
 		    );
 	    } else {
 		$tm = Time::Moment->new(
 		    day => $3,
 		    month => $2,
-		    year => $1 || $self->year,
+		    year => $1 || $self->config->year,
 		    );
 	    }
 	    $tm = Time::Piece->strptime(
-		$tm->strftime($self->input_date_format),
-		$self->input_date_format
+		$tm->strftime($self->config->date_format),
+		$self->config->date_format
 		);
 	} else {
 	    $str =~ s,/,-,g;
-	    $tm = Time::Piece->strptime($str, $self->input_date_format);
+	    $tm = Time::Piece->strptime($str, $self->config->input_date_format);
 	}
     };
-    if ($@) { return [400, "Invalid date '$str' for ".$self->input_date_format.": $@"] }
+    if ($@) { return [400, "Invalid date '$str' for ".$self->config->input_date_format.": $@"] }
     [200, $tm];
 }
 
@@ -256,20 +241,18 @@ before 'load_from_reader' => sub {
 
 sub compute_text {
     my $self = shift;
-        my $transactionFormat =
-	'@{date:%s}@{auxdate:=%s:%s} @{state:%s }@{code:(%s) :%s}'.
-	'@{description:%s}@{note:  %s:%s}';
+    my $transactionFormat = $self->config->transaction_format;
     my @formatParams=();
 
     push @formatParams, Ledger::Util->buildFormatParam(
 	'date',
 	'object' => $self,
-	'value' => $self->date->strftime($self->date_format),
+	'value' => $self->date->strftime($self->config->date_format),
 	);
     push @formatParams, Ledger::Util->buildFormatParam(
 	'auxdate',
 	'object' => $self,
-	'value' => ($self->auxdate // localtime)->strftime($self->date_format),
+	'value' => ($self->auxdate // localtime)->strftime($self->config->date_format),
 	);
     push @formatParams, Ledger::Util->buildFormatParam(
 	'state',
