@@ -12,9 +12,9 @@ with (
 	-alias => { as_string => '_as_string_main' },
 	-excludes => 'as_string',
     },
-    'Ledger::Role::ReadableFromParser',
+    'Ledger::Role::Readable',
     'Ledger::Role::HaveMetadata',
-    'Ledger::Role::HaveParsableElementsList' => { -excludes => 'BUILD', },
+    'Ledger::Role::HaveReadableElementsList' => { -excludes => 'BUILD', },
     'Ledger::Role::HaveElements' => {
 	-alias => { as_string => '_as_string_elements' },
 	-excludes => [ 'as_string', '_printable_elements' ],
@@ -149,10 +149,10 @@ our $RE_date = qr!(?:(\d{4})[/-])?(\d{1,2})[/-](\d{1,2})!;
 
 
 
-sub _parsingEnd {
+sub _readEnded {
     my $self = shift;
-    my $parser = shift;
-    my $line = $parser->next_line;
+    my $reader = shift;
+    my $line = $reader->next_line;
 
     return ($line !~ /\S/ || $line =~ /^\S/);
 }
@@ -201,12 +201,12 @@ sub _parse_date {
     [200, $tm];
 }
 
-sub new_from_parser {
+sub new_from_reader {
     my $class = shift;
     my %attr = @_;
-    my $parser = $attr{'parser'};
+    my $reader = $attr{'reader'};
     
-    my $line = $parser->next_line;
+    my $line = $reader->next_line;
     if ($line =~ /^\d/) {
 	return $class->new(@_);
     }
@@ -214,11 +214,11 @@ sub new_from_parser {
     return undef;
 }
 
-before 'load_from_parser' => sub {
+before 'load_from_reader' => sub {
     my $self = shift;
-    my $parser = shift;
+    my $reader = shift;
 
-    my $line = $parser->pop_line;
+    my $line = $reader->pop_line;
     if ($line !~ m
 	<^($re_date)                    # 1) actual date
 	(?: = ($re_date))? (\s+)        # 2) effective date 3) ws
@@ -228,13 +228,13 @@ before 'load_from_parser' => sub {
 	(?: (\s{2,}) ;(\S.+?) )?        # 9) ws 10) note
 	(\R?)\z                         # 11) nl
 	>x) {
-	$parser->give_back_next_line($line);
-	die $parser->error_prefix."Invalid transaction line syntax\n";
+	$reader->give_back_next_line($line);
+	die $reader->error_prefix."Invalid transaction line syntax\n";
     }
     my $parsed_date=$self->_parse_date($1);
     if ($parsed_date->[0] != 200) {
 	$self->_cached_text($line);
-	$self->_err($parser->error_prefix.$parsed_date->[1]);
+	$self->_err($reader->error_prefix.$parsed_date->[1]);
     }
     $self->date($parsed_date->[1]);
 
@@ -242,7 +242,7 @@ before 'load_from_parser' => sub {
 	$parsed_date=$self->_parse_date($2);
 	if ($parsed_date->[0] != 200) {
 	    $self->_cached_text($line);
-	    $self->_err($parser->error_prefix.$parsed_date->[1]);
+	    $self->_err($reader->error_prefix.$parsed_date->[1]);
 	}
 	$self->auxdate($parsed_date->[1]);
     }
@@ -257,7 +257,7 @@ before 'load_from_parser' => sub {
 sub compute_text {
     my $self = shift;
         my $transactionFormat =
-	'@{date:%s}@{auxdate:=%s:%s} @{state:%s }@{code:%s :%s}'.
+	'@{date:%s}@{auxdate:=%s:%s} @{state:%s }@{code:(%s) :%s}'.
 	'@{description:%s}@{note:  %s:%s}';
     my @formatParams=();
 
@@ -324,49 +324,56 @@ sub as_string {
 	));
 }
 
+#use 
 override 'validate' => sub {
     my $self = shift;
 
     super();
 
     # some sanity checks for the transaction
-  CHECK:
-    {
-	my @postings=$self->_filter_elements(
-	    sub {
-		$_->isa('Ledger::Posting');
+    for my $kind (Ledger::Posting::Kind::REAL,
+		  Ledger::Posting::Kind::VIRTUALBALANCED) {
+      CHECK:
+	{
+	    my @postings=$self->_filter_elements(
+		sub {
+		    $_->isa('Ledger::Posting')
+			&& $_->kind eq $kind;
+		}
+		);
+	    my $num_postings = scalar(@postings);
+	    last CHECK if !$num_postings;
+	    if ($num_postings == 1 && !$postings[0]->has_amount) {
+		#$self->_err("Posting amount cannot be null");
+		# ledger allows this
+		last CHECK;
 	    }
-	    );
-        my $num_postings = scalar(@postings);
-	last CHECK if !$num_postings;
-	if ($num_postings == 1 && !$postings[0]->has_amount) {
-            #$self->_err("Posting amount cannot be null");
-            # ledger allows this
-            last CHECK;
-        }
-        my $num_nulls = 0;
-        my %bals; # key = commodity
-        for my $p (@postings) {
-            if (!$p->has_amount) {
-                $num_nulls++;
-                next;
-            }
-            if (defined($bals{$p->commodity})) {
-		$bals{$p->commodity} = dec_add($bals{$p->commodity},
-					       $p->amount);
-	    } else {
-		$bals{$p->commodity} = $p->amount;
+	    my $num_nulls = 0;
+	    my %bals; # key = commodity
+	    for my $p (@postings) {
+		if (!$p->has_amount) {
+		    $num_nulls++;
+		    next;
+		}
+		if (defined($bals{$p->commodity})) {
+		    $bals{$p->commodity} = dec_add($bals{$p->commodity},
+						   $p->amount);
+		} else {
+		    $bals{$p->commodity} = $p->amount;
+		}
 	    }
-        }
-        last CHECK if $num_nulls == 1;
-        if ($num_nulls) {
-            $self->_err("There can only be one posting with null amount");
-        }
-        for (keys %bals) {
-            $self->_err("Transaction not balanced, " .
-                            (-$bals{$_}) . ($_ ? " $_":"")." needed")
-                if $bals{$_} != 0;
-        }
+	    last CHECK if $num_nulls == 1;
+	    if ($num_nulls) {
+		$self->_err("Transaction:\n" . $self . 
+			    "\nThere can only be one posting with null amount");
+	    }
+	    for (keys %bals) {
+		$self->_err("Transaction not balanced:\n" . $self . "\n" .
+                            (-$bals{$_}) . ($_ ? " $_":"")." needed in " .
+			    $kind . " postings")
+		    if $bals{$_} != 0;
+	    }
+	}
     }
 };
 
@@ -391,8 +398,8 @@ around BUILDARGS => sub {
     } else {
         %hash=(@_);
     }
-    if (exists($hash{'parser'})) {
-	# date and description will be parsed with the parser
+    if (exists($hash{'reader'})) {
+	# date and description will be set with the reader informations
 	# setting fake values for now
         $hash{'date'} = localtime;
 	$hash{'description'}='';

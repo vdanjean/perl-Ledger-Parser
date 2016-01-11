@@ -1,9 +1,9 @@
-package Ledger::Role::HaveParsableElementsList;
+package Ledger::Role::HaveReadableElementsList;
 use Moose::Role;
 use namespace::sweep;
 use MooseX::ClassAttribute;
 
-with ('Ledger::Role::HaveParsableElements');
+with ('Ledger::Role::HaveReadableElements');
 
 requires '_doElementKindsRegistration';
 

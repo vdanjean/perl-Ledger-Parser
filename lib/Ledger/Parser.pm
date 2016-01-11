@@ -1,198 +1,155 @@
 package Ledger::Parser;
 use Moose;
 use namespace::sweep;
+use Moose::Util::TypeConstraints;
+use Ledger::Util::Reader;
+use Ledger::Journal;
+
+# DATE
+# VERSION
+
+use 5.010001;
 use utf8;
-#use Carp;
-use Path::Class::File;
+use Carp;
 
-has 'lineno' => (
-    is       => 'ro',
-    isa      => 'Int',
-    writer   => '_set_lineno',
-    predicate => 'has_lineno',
+has 'input_date_format' => (
+    is          => 'rw',
+    isa         => enum([qw[ YYYY/MM/DD YYYY/DD/MM ]]),
+    default     => "YYYY/MM/DD",
     );
 
-has 'filename' => (
-    is       => 'ro',
-    isa      => 'Str',
-    writer   => '_set_filename',
-    predicate => 'has_filename',
+has 'year' => (
+    is          => 'rw',
+    isa         => 'Num',
+    default     => (localtime)[5] + 1900,
     );
 
-has 'parent' => (
-    is       => 'ro',
-    isa      => 'Maybe[LedgerStr]',
-    writer   => '_set_parent',
-    predicate => 'has_parent',
-    clearer  => '_unset_parent',
+has 'validate' => (
+    is          => 'rw',
+    isa         => 'Bool',
+    default     => 1,
     );
 
-sub id {
-    my $self=shift;
-
-    return undef if not $self->has_filename;
-    if ($self->has_lineno) {
-	return $self->filename.':'.$self->lineno.':';
-    } else {
-	return $self->filename.':';
-    }
-}
-
-sub parent_with_id {
-    my $self=shift;
-
-    my $parent=$self->parent;
-    while(defined($parent) && not defined($parent->id)) {
-	$parent=$parent->parent;
-    }
-    return $parent;
-}
-
-sub error_prefix {
-    my $self = shift;
-    my $id_parser=$self;
-    my $suffix="";
-    while (defined($id_parser) and not defined($id_parser->id)) {
-	$id_parser=$id_parser->parent;
-    }
-    if (not defined($id_parser)) {
-	return "<>: ";
-    } else {
-	$suffix = $id_parser->id.' ';
-    }
-    my $parent=$self->parent_with_id;
-    return $suffix if not defined($parent);
-
-    my $prefix="In file included from ".$parent->id."\n";
-    $parent=$parent->parent_with_id;
-    while (defined($parent)) {
-	$prefix .= '                 from '.$parent->id."\n";
-	$parent=$parent->parent_with_id;
-    }
-    return $prefix.$suffix;
-}
-
-sub _inc_lineno {
-    my $self = shift;
-    $self->_set_lineno($self->lineno + 1);
-}
-
-has 'eof' => (
-    is       => 'ro',
-    isa      => 'Int',
-    writer   => '_set_eof',
-    required => 1,
-    default  => 0,
-    );
-
-has 'next_line' => (
-    is       => 'ro',
-    isa      => 'Str',
-    writer   => '_set_next_line',
-    clearer  => '_unset_next_line',
-    predicate=> '_has_next_line',
-    );
-
-before 'next_line' => sub {
-    my $self = shift;
-    
-    if ((not $self->_has_next_line) && (not $self->eof)) {
-	my $fh=$self->_fh;
-	my $line=<$fh>;
-	if (defined($line)) {
-	    $self->_inc_lineno;
-	    $self->_set_next_line($line);
-	} else {
-	    $self->_set_eof(1);
-	    $self->_fh->close();
-	}
-    }
-};
-
-has '_fh' => (
-    is       => 'rw',
-    isa      => 'FileHandle',
-    );
-
-has '_type' => (
-    is       => 'rw',
-    isa      => 'Str',
-    );
-
-sub pop_line {
-    my $self = shift;
-    my $line = $self->next_line;
-    $self->_unset_next_line;
-    return $line;
-}
-
-sub give_back_next_line {
-    my $self = shift;
-    my $line = shift;
-
-    if ($self->_has_next_line || $self->eof) {
-	$self->_error("No way to give back previous line in parser when next one is loaded");
-    }
-    $self->_set_next_line($line);
-}    
-
-sub _error {
-    my $self= shift;
-    my $msg = shift;
-
-    die $self->meta->name.": ".$self->error_prefix.$msg;
-}
-
-around BUILDARGS => sub {
-    my $orig  = shift;
-    my $class = shift;
-    my %hash;
-    
-    if ( @_ == 1 && ref $_[0] ) {
-	%hash=(%{$_[0]});
-    } else {
-	%hash=(@_);
-    }
-    if (exists($hash{'file'})) {
-	$hash{'file'} = Path::Class::File->new($hash{'file'});
-    }
-    return $class->$orig(%hash);
-};
-
-sub BUILD {
-    my $self = shift;
-    my $args = shift;
-
-    if (exists($args->{'file'})) {
-	my $filename=$args->{'file'};
-	open my $fh, "<", $filename
-	    or $self->_error("can't open file '$filename': $!\n");
-	binmode($fh, ":utf8");
-	$self->_fh($fh);
-	$self->_set_lineno(0);
-	$self->_set_filename("$filename");
-	$self->_type('file');
-    } elsif (exists($args->{'string'})) {
-	my $content=$args->{'string'};
-	open my $fh, "<", \$content;
-	binmode($fh, ":utf8");
-	$self->_fh($fh);
-	$self->_type('string');
-    }
-    $self->_set_lineno($args->{'lineno'} - 1) if exists $args->{'lineno'};
-    $self->_set_filename($args->{'filename'}) if exists $args->{'filename'};
-    if (not($self->has_parent || $self->has_filename)) {
-	die "Anonymous parser cannot be instanciated";
-    }
-}
-
-sub newSubParser {
-    my $self=shift;
-    return $self->new(
-	'parent' => $self,
-	@_,
+sub read_file {
+    my ($self, $filename) = @_;
+    my $journal=Ledger::Journal->new(
+	'reader' => Ledger::Util::Reader->new(
+	    'file' => $filename,
+	),
 	);
+    $journal->validate if $self->validate;
+    return $journal;
+}
+
+sub read_string {
+    my ($self, $str) = @_;
+    my $journal=Ledger::Journal->new(
+	'reader' => Ledger::Util::Reader(
+	    'string' => $str,
+	),
+	);
+    $journal->validate if $self->validate;
+    return $journal;
 }
 
 1;
 # ABSTRACT: Parse Ledger journals
+
+=head1 SYNOPSIS
+
+ use Ledger::Parser;
+ my $ledgerp = Ledger::Parser->new(
+     # year              => undef,        # default: current year
+     # input_date_format => 'YYYY/MM/DD', # or 'YYYY/DD/MM',
+ );
+
+ # parse a file
+ my $journal = $ledgerp->read_file("$ENV{HOME}/money.dat");
+
+ # parse a string
+ $journal = $ledgerp->read_string(<<EOF);
+ ; -*- Mode: ledger -*-
+ 09/06 dinner
+ Expenses:Food          $10.00
+ Expenses:Tips         5000.00 IDR ; 5% tip
+ Assets:Cash:Wallet
+
+ 2013/09/07 opening balances
+ Assets:Mutual Funds:Mandiri  10,305.1234 MFEQUITY_MANDIRI_IAS
+ Equity:Opening Balances
+
+ P 2013/08/01 MFEQUITY_MANDIRI_IAS 1,453.8500 IDR
+ P 2013/08/31 MFEQUITY_MANDIRI_IAS 1,514.1800 IDR
+ EOF
+
+See L<Ledger::Journal> for available methods for the journal object.
+
+
+=head1 DESCRIPTION
+
+This module parses Ledger journal into L<Ledger::Journal> object. See
+http://ledger-cli.org/ for more on Ledger, the command-line double-entry
+accounting system software.
+
+Ledger 3 can be extended with Python, and this module only supports a subset of
+Ledger syntax, so you might also want to take a look into the Python extension.
+However, this module can also modify/write the journal, so it can be used e.g.
+to insert transactions programmatically (which is my use case and the reason I
+first created this module).
+
+This is an inexhaustive list of things that are not currently supported:
+
+=over
+
+=item * Costs & prices
+
+For example, things like:
+
+ 2012-04-10 My Broker
+    Assets:Brokerage            10 AAPL @ $50.00
+    Assets:Brokerage:Cash
+
+=item * Automated transaction
+
+=item * Periodic transaction
+
+=item * Expression
+
+=item * Various commands
+
+Including but not limited to: assert, C (currency conversion), ...
+
+=back
+
+
+=head1 ATTRIBUTES
+
+=head2 input_date_format => str ('YYYY/MM/DD' or 'YYYY/DD/MM')
+
+Ledger accepts dates in the form of yearless (e.g. 01/02, 3-12) or with 4-digit
+year (e.g. 2015/01/02, 2015-3-12). Month and day can be single- or
+double-digits. Separator is either C<-> or C</>.
+
+When year is omitted, year will be retrieved from the C<year> attribute.
+
+The default format is month before day (C<YYYY/MM/DD>), but you can also use day
+before month (C<YYYY/DD/MM>).
+
+=head2 year => int (default: current year)
+
+Only used when encountering a date without year.
+
+=head2
+
+
+=head1 METHODS
+
+=head2 new(%attrs) => obj
+
+Create a new parser instance.
+
+=head2 $ledgerp->read_file($filename) => obj
+
+=head2 $ledgerp->read_string($str) => obj
+
+=cut

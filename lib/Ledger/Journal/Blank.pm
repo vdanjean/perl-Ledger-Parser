@@ -4,17 +4,17 @@ use namespace::sweep;
 
 with (
     'Ledger::Role::HaveCachedText',
-    'Ledger::Role::ReadableFromParser',
+    'Ledger::Role::Readable',
     );
 
 extends 'Ledger::Journal::Element';
 
-sub new_from_parser {
+sub new_from_reader {
     my $class = shift;
     my %attr = @_;
-    my $parser = $attr{'parser'};
+    my $reader = $attr{'reader'};
     
-    my $line = $parser->next_line;
+    my $line = $reader->next_line;
     if ($line !~ /\S/) {
 	return $class->new(@_);
     }
@@ -22,16 +22,16 @@ sub new_from_parser {
     return undef;
 }
 
-sub load_from_parser {
+sub load_from_reader {
     my $self = shift;
-    my $parser = shift;
+    my $reader = shift;
 
-    my $line = $parser->pop_line;
+    my $line = $reader->pop_line;
     if ($line !~ /\S/) {
 	$self->_cached_text($line);
     } else {
-	$parser->give_back_next_line($line);
-	die $parser->error_prefix." cannot read a blank here";
+	$reader->give_back_next_line($line);
+	die $reader->error_prefix." cannot read a blank here";
     }
 };
 

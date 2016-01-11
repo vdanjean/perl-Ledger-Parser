@@ -1,9 +1,9 @@
-package Ledger::Role::HaveParsableElementsFromParent;
+package Ledger::Role::HaveReadableElementsFromParent;
 use Moose::Role;
 
 with (
     'Ledger::Role::HaveParent',
-    'Ledger::Role::HaveParsableElements',
+    'Ledger::Role::HaveReadableElements',
     );
 
 sub _listElementKinds {

@@ -12,9 +12,9 @@ with (
 	-alias => { as_string => '_as_string_main' },
 	-excludes => 'as_string',
     },
-    'Ledger::Role::ReadableFromParser',
+    'Ledger::Role::Readable',
     'Ledger::Role::HaveMetadata',
-    'Ledger::Role::HaveParsableElementsList' => { -excludes => 'BUILD', },
+    'Ledger::Role::HaveReadableElementsList' => { -excludes => 'BUILD', },
     'Ledger::Role::HaveElements' => {
 	-alias => { as_string => '_as_string_elements' },
 	-excludes => [ 'as_string' ],
@@ -100,10 +100,10 @@ has 'kind' => (
     default  => Ledger::Posting::Kind::REAL,
     );
 
-sub _parsingEnd {
+sub _readEnded {
     my $self = shift;
-    my $parser = shift;
-    my $line = $parser->next_line;
+    my $reader = shift;
+    my $line = $reader->next_line;
 
     return ($line !~ /^\s+;/);
 }
@@ -114,12 +114,12 @@ sub _doElementKindsRegistration {
     $self->_registerElementKind('Ledger::Posting::Note');#, 'Ledger::Posting');
 };
 
-sub new_from_parser {
+sub new_from_reader {
     my $class = shift;
     my %attr = @_;
-    my $parser = $attr{'parser'};
+    my $reader = $attr{'reader'};
     
-    my $line = $parser->next_line;
+    my $line = $reader->next_line;
     if ($line =~ /^\s/) {
 	return $class->new(@_);
     }
@@ -146,11 +146,11 @@ sub _parse_amount {
     ]];
 }
 
-before 'load_from_parser' => sub {
+before 'load_from_reader' => sub {
     my $self = shift;
-    my $parser = shift;
+    my $reader = shift;
 
-    my $line = $parser->pop_line;
+    my $line = $reader->pop_line;
     if ($line !~ m!
 	^(\s+)                       # 1) ws1
 	(\[|\()?                     # 2) oparen
@@ -160,8 +160,8 @@ before 'load_from_parser' => sub {
 	(?: (\s*) ;(.*?))?           # 7) ws 8) note
 	(\R?)\z                      # 9) nl
                       !x) {
-	$parser->give_back_next_line($line);
-	die $parser->error_prefix."Invalid posting line syntax\n";
+	$reader->give_back_next_line($line);
+	die $reader->error_prefix."Invalid posting line syntax\n";
     }
     $self->account($3);
     
