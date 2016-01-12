@@ -2,7 +2,7 @@ package Ledger::Util;
 use strict;
 use warnings;
 use List::Util qw(min);
-use Math::Decimal qw(dec_round);
+use Math::BigRat;
 
 sub format {
     my $class = shift;
@@ -69,7 +69,7 @@ sub buildFormatParam {
     if ($has_value) {
 	push @fpar, $value;
 	if ($type eq 'Num') {
-	    if (dec_round("TWZ", $value, 1)==$value) {
+	    if (Math::BigRat->new($value)->is_int) {
 		push @fpar, undef, $value;
 	    }
 	}

@@ -2,7 +2,7 @@ package Ledger::Posting;
 use Moose;
 use namespace::sweep;
 use Ledger::Types;
-use Math::Decimal qw(dec_mul);
+use Math::BigRat;
 use Ledger::Util;
 use utf8;
 
@@ -138,9 +138,10 @@ sub _parse_amount {
         return [400, "Invalid amount '$str' (double commodity)"];
     }
     $num =~ s/,//g;
-    $num = dec_mul($num, -1) if $minsign;
+    $num = Math::BigRat->new($num);
+    $num = $num * -1 if $minsign;
     return [200, "OK", [
-        $num, # raw number
+        $num, # exact rationnal
         ($commodity1 || $commodity2) // '', # commodity
         $commodity1 ? "B$ws1" : "A$ws2", # format: B(efore)|A(fter) + spaces
     ]];

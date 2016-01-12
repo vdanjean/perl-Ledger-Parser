@@ -1,7 +1,6 @@
 package Ledger::Transaction;
 use Moose;
 use namespace::sweep;
-use Math::Decimal qw(dec_add);
 use Ledger::Types;
 use Ledger::Transaction::State;
 use Time::Piece;
@@ -338,12 +337,7 @@ override 'validate' => sub {
 		    $num_nulls++;
 		    next;
 		}
-		if (defined($bals{$p->commodity})) {
-		    $bals{$p->commodity} = dec_add($bals{$p->commodity},
-						   $p->amount);
-		} else {
-		    $bals{$p->commodity} = $p->amount;
-		}
+		$bals{$p->commodity} += $p->amount;
 	    }
 	    last CHECK if $num_nulls == 1;
 	    if ($num_nulls) {

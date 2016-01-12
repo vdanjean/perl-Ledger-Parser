@@ -3,14 +3,15 @@ use Moose::Util::TypeConstraints;
 use namespace::sweep;
 use Ledger::Posting::Kind ':constants';
 use Ledger::Transaction::State ':constants';
+use Math::BigRat;
 
 subtype 'Ledger::Type::Amount',
-    as 'Num',
+    as 'Math::BigRat',
     message { "$_ is not a number!" };
     
 coerce 'Ledger::Type::Amount',
     from 'Str',
-    via { 0+$_ };
+    via { Math::BigRat->new($_) };
 
 enum 'Ledger::Type::Posting::Kind', [REAL, VIRTUALBALANCED, VIRTUALUNBALANCED];
 
