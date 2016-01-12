@@ -7,10 +7,10 @@ use warnings;
 use File::ShareDir::Tarball qw(dist_dir);
 use File::Slurper 'read_text';
 use Ledger::Parser;
-#use Test::Differences;
+use Test::Differences;
 use Test::Exception;
 use Test::More 0.98;
-use Test::LongString;
+#use Test::LongString;
 
 my $dir = dist_dir('Ledger-Examples');
 diag ".dat files are at $dir";
@@ -37,14 +37,19 @@ for my $file (@files) {
             lives_ok { $journal = $parser->read_file($file) } "$file should lives";
 	    skip "Skipping reminded test for unloadable file", 2
 		if not defined($journal);
-	    is_string($journal->as_string, $orig_content, "same as original");
+            eq_or_diff $journal->as_string, $orig_content, "round-trip";
 	    $journal->cleanup;
 	    $orig_content =~ s,^([0-9]+)[/]([0-9]+)[/]([0-9]+\s),$1-$2-$3,mg;
 	    $orig_content =~ s,^([0-9]+)/([0-9]+\s),$1-$2,mg;
+	    $orig_content =~ s,[ \t]+, ,mg;
+	    $orig_content =~ s,; ,;,mg;
+	    my $jcontent = $journal->as_string;
+	    $jcontent =~ s,[ \t]+, ,mg;
+	    $jcontent =~ s,; ,;,mg;
 	    skip "Rewrite after cleanup is different by design", 1
 		if $file =~ /(tx|floating-rouding|amount-symbol-before-and-after)\.dat/;
-	    is_string_nows($journal->as_string, $orig_content, "nearly same after cleanup");
-            #eq_or_diff $journal->as_string, $orig_content, "round-trip";
+	    #is_string_nows($journal->as_string, $orig_content, "nearly same after cleanup");
+            eq_or_diff $jcontent, $orig_content, "cleanup and round-trip";
         };
       }
     }
