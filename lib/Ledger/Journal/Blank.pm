@@ -1,6 +1,7 @@
 package Ledger::Journal::Blank;
 use Moose;
 use namespace::sweep;
+use Ledger::Exception::ParseError;
 
 with (
     'Ledger::Role::HaveCachedText',
@@ -8,19 +9,6 @@ with (
     );
 
 extends 'Ledger::Journal::Element';
-
-sub new_from_reader {
-    my $class = shift;
-    my %attr = @_;
-    my $reader = $attr{'reader'};
-    
-    my $line = $reader->next_line;
-    if ($line !~ /\S/) {
-	return $class->new(@_);
-    }
-    
-    return undef;
-}
 
 sub load_from_reader {
     my $self = shift;
@@ -31,7 +19,11 @@ sub load_from_reader {
 	$self->_cached_text($line);
     } else {
 	$reader->give_back_next_line($line);
-	die $reader->error_prefix." cannot read a blank here";
+	die Ledger::Exception::ParseError->new(
+	    'line' => $line,
+	    'parser_prefix' => $reader->error_prefix,
+	    'message' => "not a blank line",
+	    );
     }
 };
 

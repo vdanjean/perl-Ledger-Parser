@@ -25,14 +25,13 @@ has 'config' => (
     required   => 1,
     );
 
-sub _doElementKindsRegistration {
-    my $self = shift;
-    #print "registering\n";
-    $self->_registerElementKind(
+sub _setupElementKinds {
+    return [
 	'Ledger::Journal::Note',
 	'Ledger::Journal::Blank',
-	'Ledger::Transaction');
-};
+	'Ledger::Transaction',
+	];
+}
 
 sub _readEnded {
     return 0;

@@ -26,6 +26,14 @@ has '+elements' => (
     isa      => 'ArrayRef[Ledger::Transaction::Element]',
     );
 
+sub _setupElementKinds {
+    return [
+	'Ledger::Transaction::Tag',
+	'Ledger::Transaction::Note',
+	'Ledger::Posting'
+	];
+}
+
 has 'date' => (
     is       => 'rw',
     isa      => 'Time::Piece',
@@ -141,15 +149,6 @@ sub _readEnded {
     return ($line !~ /\S/ || $line =~ /^\S/);
 }
 
-sub _doElementKindsRegistration {
-    my $self = shift;
-    #print "registering\n";
-    $self->_registerElementKind(
-	'Ledger::Transaction::Note',
-	'Ledger::Posting'
-	);
-};
-
 sub _parse_date {
     my ($self, $str) = @_;
     return [400,"Invalid date syntax '$str'"] unless $str =~ /\A(?:$RE_date)\z/;
@@ -185,19 +184,6 @@ sub _parse_date {
     [200, $tm];
 }
 
-sub new_from_reader {
-    my $class = shift;
-    my %attr = @_;
-    my $reader = $attr{'reader'};
-    
-    my $line = $reader->next_line;
-    if ($line =~ /^\d/) {
-	return $class->new(@_);
-    }
-    
-    return undef;
-}
-
 before 'load_from_reader' => sub {
     my $self = shift;
     my $reader = shift;
@@ -213,7 +199,11 @@ before 'load_from_reader' => sub {
 	(\R?)\z                         # 11) nl
 	>x) {
 	$reader->give_back_next_line($line);
-	die $reader->error_prefix."Invalid transaction line syntax\n";
+	die Ledger::Exception::ParseError->new(
+	    'line' => $line,
+	    'parser_prefix' => $reader->error_prefix,
+	    'message' => "not an initial transaction line",
+	    );
     }
     my $parsed_date=$self->_parse_date($1);
     if ($parsed_date->[0] != 200) {

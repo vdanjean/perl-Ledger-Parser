@@ -27,6 +27,12 @@ has '+elements' => (
     isa      => 'ArrayRef[Ledger::Posting::Element]',
     );
 
+sub _setupElementKinds {
+    return [
+	'Ledger::Posting::Tag',
+	'Ledger::Posting::Note',
+	];
+}
 
 # note: $RE_xxx is capturing, $re_xxx is non-capturing
 our $re_date = qr!(?:\d{4}[/-])?\d{1,2}[/-]\d{1,2}!;
@@ -108,25 +114,6 @@ sub _readEnded {
     return ($line !~ /^\s+;/);
 }
 
-sub _doElementKindsRegistration {
-    my $self = shift;
-    #print "registering\n";
-    $self->_registerElementKind('Ledger::Posting::Note');#, 'Ledger::Posting');
-};
-
-sub new_from_reader {
-    my $class = shift;
-    my %attr = @_;
-    my $reader = $attr{'reader'};
-    
-    my $line = $reader->next_line;
-    if ($line =~ /^\s/) {
-	return $class->new(@_);
-    }
-    
-    return undef;
-}
-
 sub _parse_amount {
     my ($self, $str) = @_;
     return [400, "Invalid amount syntax '$str'"]
@@ -162,7 +149,11 @@ before 'load_from_reader' => sub {
 	(\R?)\z                      # 9) nl
                       !x) {
 	$reader->give_back_next_line($line);
-	die $reader->error_prefix."Invalid posting line syntax\n";
+	die Ledger::Exception::ParseError->new(
+	    'line' => $line,
+	    'parser_prefix' => $reader->error_prefix,
+	    'message' => "not an initial posting line",
+	    );
     }
     $self->account($3);
     

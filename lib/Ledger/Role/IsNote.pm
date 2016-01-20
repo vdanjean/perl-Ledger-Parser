@@ -57,41 +57,20 @@ sub _note_clear_cached_text {
     return $self->_clear_cached_text(@_);
 }
 
-# WARNING: can be called as a class method
-# In this case, the 'parent' argument is mandatory
 sub _RE_comment_char {
     my $self = shift;
-    my $parent = shift // $self->parent;
-    if ($parent->isa('Ledger::Journal')) {
+    if ($self->parent->isa('Ledger::Journal')) {
 	return qr@(?:[;#%|*])@;
     }
     return qr@(?:;)@;
 }
 
-# WARNING: can be called as a class method
-# In this case, the 'parent' argument is mandatory
 sub _RE_before_comment {
     my $self = shift;
-    my $parent = shift // $self->parent;
-    if ($parent->isa('Ledger::Journal')) {
+    if ($self->parent->isa('Ledger::Journal')) {
 	return qr@(?:)@;
     }
     return qr@(?:\s+)@;
-}
-
-sub new_from_reader {
-    my $class = shift;
-    my %attr = @_;
-    my $reader = $attr{'reader'};
-    
-    my $line = $reader->next_line;
-    my $RE_comment_char=$class->_RE_comment_char($attr{'parent'});
-    my $RE_before_comment=$class->_RE_before_comment($attr{'parent'});
-    if ($line =~ /^$RE_before_comment$RE_comment_char/) {
-	return $class->new(@_);
-    }
-    
-    return undef;
 }
 
 sub load_from_reader {
@@ -100,15 +79,19 @@ sub load_from_reader {
 
     my $line = $reader->pop_line;
     my $RE_comment_char=$self->_RE_comment_char;
-    if ($line =~ /^(\s*)($RE_comment_char)(.*?)(\R?)\z/) {
-	$self->_start($1);
-	$self->comment_char($2);
-	$self->note($3);
-	$self->_cached_text($line);
-    } else {
+    my $RE_before_comment=$self->_RE_before_comment;
+    if ($line !~ /^($RE_before_comment)($RE_comment_char)(.*?)(\R?)\z/) {
 	$reader->give_back_next_line($line);
-	die $reader->error_prefix." cannot read a note here";
+	die Ledger::Exception::ParseError->new(
+	    'line' => $line,
+	    'parser_prefix' => $reader->error_prefix,
+	    'message' => "not a comment line",
+	    );
     }
+    $self->_start($1);
+    $self->comment_char($2);
+    $self->note($3);
+    $self->_cached_text($line);
 };
 
 sub compute_text {
