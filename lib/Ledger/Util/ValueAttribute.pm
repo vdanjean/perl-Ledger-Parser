@@ -11,14 +11,21 @@ Moose::Exporter->setup_import_methods(
 
 use UNIVERSAL::require;
 sub has_value {
-    print "'", join("', '",@_), "'\n";
+    #print "'", join("', '",@_), "'\n";
     my ( $meta, $name, %attr ) = @_;
 #    my $meta = shift;
 #    my $name = shift;
 #    my %attr = (@_);
     my $attrtype = $attr{'isa'} // 'Str';
-    my $required = $attr{'required'} // 0;
     my $type;
+    my %buildhash=(
+	'required' => $attr{'required'} // 0,
+	);
+    my %attrhash=();
+    if (exists($attr{'default'})) {
+	$buildhash{'value'}=$attr{'default'};
+	$buildhash{'default_value'}=$attr{'default'};
+    }
 
     my $role='Ledger::Role::HaveValues';
     if (! $meta->does_role($role)) {
@@ -35,7 +42,7 @@ sub has_value {
 		$type=$t;
 		last TYPE;
 	    }
-	    print $@;
+	    print $@ if $@ !~ /^Can't locate /;
 	}
 	die "Unkwown value type '".$attrtype."'";
     }
@@ -54,12 +61,12 @@ sub has_value {
 	required  => 1,
 	default   => sub {
 	    my $self=shift;
-	    print 'creating '.$name.' with parent: ', blessed($self), "\n";
-	    print 'attr names: '.join(", ", $self->all_value_names)."\n";
+	    #print 'creating '.$name.' with parent: ', blessed($self), "\n";
+	    #print 'attr names: '.join(", ", $self->all_value_names)."\n";
 	    my $attr=$type->builder(
 		'parent' => $self,
-		'required' => $required,
 		'name' => $name,
+		%buildhash,
 		);
 	    $self->_register_value($name, $attr);
 	    return $attr;

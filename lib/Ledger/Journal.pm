@@ -48,6 +48,14 @@ sub journal {
     return $self;
 }
 
+sub numlines {
+    return 0;
+}
+
+sub startlinenum {
+    return 0;
+}
+
 1;
 # ABSTRACT: Represent Ledger journal
 

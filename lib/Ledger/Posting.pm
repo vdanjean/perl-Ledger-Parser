@@ -7,6 +7,8 @@ use Ledger::Util;
 use utf8;
 
 
+extends 'Ledger::Transaction::Element';
+
 with (
     'Ledger::Role::HaveCachedText' => {
 	-alias => { as_string => '_as_string_main' },
@@ -20,8 +22,6 @@ with (
 	-excludes => [ 'as_string' ],
     },
     );
-
-extends 'Ledger::Transaction::Element';
 
 has '+elements' => (
     isa      => 'ArrayRef[Ledger::Posting::Element]',

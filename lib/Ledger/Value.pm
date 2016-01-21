@@ -18,4 +18,14 @@ sub die_bad_string {
 	);
 }
 
+sub element {
+    my $self = shift;
+    my $el = $self;
+
+    while (!$el->isa('Ledger::Element')) {
+	$el = $el->parent;
+    }
+    return $el;
+}
+
 1;

@@ -23,8 +23,8 @@ sub _parse_date {
     my ($self, $str) = @_;
     my ($n1, $n2, $n3);
 
-    print "Role : ", $self->meta->does_role('Ledger::Role::HaveParent'), "\n";
-    print "meth : ", $self->can('parent'), "\n";
+    #print "Role : ", $self->meta->does_role('Ledger::Role::HaveParent'), "\n";
+    #print "meth : ", $self->can('parent'), "\n";
 
     
     if ($self->config->input_date_format eq 'YYYY/DD/MM'
@@ -77,10 +77,9 @@ sub _parse_date {
     return $tm;
 }
 
-sub compute_text {
+sub _compute_text {
     my $self = shift;
 
-    return '' if ! $self->present;
     return $self->value->strftime($self->config->date_format);
 }
 

@@ -17,5 +17,7 @@ enum 'Ledger::Type::Posting::Kind', [REAL, VIRTUALBALANCED, VIRTUALUNBALANCED];
 
 enum 'Ledger::Type::Transaction::State', [DEFAULT, CLEARED, PENDING];
 
+enum 'Ledger::Type::ErrorLevel', [ qw(warning error) ];
+
 1;
 

@@ -6,6 +6,8 @@ use Ledger::Transaction::State;
 use TryCatch;
 use Ledger::Util::ValueAttribute;
 
+extends 'Ledger::Journal::Element';
+
 with (
     'Ledger::Role::HaveCachedText' => {
 	-alias => { as_string => '_as_string_main' },
@@ -20,8 +22,6 @@ with (
     },
     'Ledger::Role::HaveValues',
     );
-
-extends 'Ledger::Journal::Element';
 
 has '+elements' => (
     isa      => 'ArrayRef[Ledger::Transaction::Element]',
@@ -42,76 +42,26 @@ has_value 'date' => (
     
 has_value 'auxdate' => (
     isa         => 'Date',
+    );
+
+has_value 'state' => (
+    isa         => 'TransactionState',
     required    => 1,
+    default     => Ledger::Transaction::State::DEFAULT,
     );
 
-has 'state' => (
-    is       => 'rw',
-    isa      => 'Ledger::Type::Transaction::State',
-    default  => Ledger::Transaction::State::DEFAULT,
-    predicate => 'has_state',
+has_value 'code' => (
+    isa         => 'Str',
     );
 
-around 'state' => sub {
-    my $orig = shift;
-    my $self = shift;
-
-    return $self->$orig()
-	unless @_;
-
-    my $state = shift;
-    $state =~ s/\s//g;
-    if (Ledger::Transaction::State->isSymbol($state)) {
-	$state=Ledger::Transaction::State->fromSymbol($state);
-    }
-    return $self->$orig($state);
-};
-
-sub clear_state {
-    my $self = shift;
-    $self->state(Ledger::Transaction::State::DEFAULT);
-}
-
-has 'code' => (
-    is       => 'rw',
+has_value 'description' => (
     isa      => 'Str',
-    trigger  => \&_clear_cached_text,
-    clearer   => 'clear_code',
-    predicate => 'has_code',
-    );
-
-has 'description' => (
-    is       => 'rw',
-    isa      => 'Str',
-    trigger  => \&_clear_cached_text,
-    clearer   => 'clear_description',
-    predicate => 'has_description',
     required => 1,
     );
 
-has 'note' => (
-    is       => 'rw',
-    isa      => 'Str',
-    trigger  => \&_clear_cached_text,
-    clearer   => 'clear_note',
-    predicate => 'has_note',
+has_value 'note' => (
+    isa      => 'EndStrippedStr',
     );
-
-around 'note' => sub {
-    my $orig = shift;
-    my $self = shift;
-
-    return $self->$orig()
-	unless @_;
-
-    my $msg = shift;
-    $msg =~ s/\s*$//;
-    return $self->$orig($msg);
-};
-
-
-
-
 
 sub _readEnded {
     my $self = shift;
@@ -132,7 +82,7 @@ before 'load_from_reader' => sub {
 	(?: ([!*]) (\s*) )?             # 4) state 5) ws
 	(?: \(([^\)]+)\) (\s*))?        # 6) code 7) ws
 	(\S.*?)                         # 8) desc
-	(?: (\s{2,}) ;(\S.+?) )?        # 9) ws 10) note
+	(?: (\s{2,} ;\s?)(.*) )?        # 9) ws 10) note
 	(\R?)\z                         # 11) nl
 	>x) {
 	$reader->give_back_next_line($line);
@@ -169,36 +119,7 @@ sub compute_text {
     my $transactionFormat = $self->config->transaction_format;
     my @formatParams=();
 
-    push @formatParams, Ledger::Util->buildFormatParam(
-	'date',
-	'object' => $self,
-	'value' => $self->date_str,
-	);
-    push @formatParams, Ledger::Util->buildFormatParam(
-	'auxdate',
-	'object' => $self,
-	'value' => $self->auxdate_str,
-	);
-    push @formatParams, Ledger::Util->buildFormatParam(
-	'state',
-	'object' => $self,
-	'value' => Ledger::Transaction::State->toSymbol(
-	    $self->state
-	),
-	);
-    push @formatParams, Ledger::Util->buildFormatParam(
-	'code',
-	'object' => $self,
-	);
-    push @formatParams, Ledger::Util->buildFormatParam(
-	'description',
-	'object' => $self,
-	);
-    push @formatParams, Ledger::Util->buildFormatParam(
-	'note',
-	'object' => $self,
-	'value' => ";".($self->note // ""),
-	);
+    push @formatParams, $self->formatValueParams();
 
     my $str=Ledger::Util->format(
 	$transactionFormat => {@formatParams}
@@ -232,7 +153,6 @@ sub as_string {
 	));
 }
 
-#use 
 override 'validate' => sub {
     my $self = shift;
 

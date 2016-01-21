@@ -57,4 +57,18 @@ sub validateValues {
     } $self->all_value_names;
 }
 
+sub formatValueParams {
+    my $self=shift;
+
+    return map {
+	my $name=$_;
+	my $name_str=$name.'_str';
+	Ledger::Util->buildFormatParam(
+	    $name,
+	    'object' => $self,
+	    'value' => $self->$name_str,
+	    );
+    } $self->all_value_names;
+}
+
 1;

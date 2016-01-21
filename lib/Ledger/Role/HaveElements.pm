@@ -1,7 +1,10 @@
 package Ledger::Role::HaveElements;
 use Moose::Role;
+use List::Util qw(sum);
 
 with 'Ledger::Role::IsPrintable';
+
+requires 'numlines';
 
 has 'elements' => (
     traits   => ['Array'],
@@ -45,6 +48,14 @@ sub validateElements {
     my $self=shift;
     my @res = $self->_map_elements(sub { $_->validate(@_); })
 }
+
+around 'numlines' => sub {
+    my $orig = shift;
+    my $self = shift;
+
+    return $self->$orig() 
+	+ sum($self->_map_elements(sub { $_->numlines(@_); }));
+};
 
 1;
 
