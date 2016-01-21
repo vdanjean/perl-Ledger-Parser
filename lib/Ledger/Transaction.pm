@@ -3,8 +3,8 @@ use Moose;
 use namespace::sweep;
 use Ledger::Types;
 use Ledger::Transaction::State;
-use Time::Piece;
-use Time::Moment;
+use TryCatch;
+use Ledger::Util::ValueAttribute;
 
 with (
     'Ledger::Role::HaveCachedText' => {
@@ -18,6 +18,7 @@ with (
 	-alias => { as_string => '_as_string_elements' },
 	-excludes => [ 'as_string', '_printable_elements' ],
     },
+    'Ledger::Role::HaveValues',
     );
 
 extends 'Ledger::Journal::Element';
@@ -34,40 +35,14 @@ sub _setupElementKinds {
 	];
 }
 
-has 'date' => (
-    is       => 'rw',
-    isa      => 'Time::Piece',
-    trigger  => \&_clear_cached_text,
-    clearer   => 'clear_date',
-    predicate => 'has_date',
-    required  => 1,
+has_value 'date' => (
+    isa         => 'Date',
+    required    => 1,
     );
-
-has 'auxdate' => (
-    is       => 'rw',
-    isa      => 'Time::Piece',
-    trigger  => \&_clear_cached_text,
-    clearer   => 'clear_auxdate',
-    predicate => 'has_auxdate',
+    
+has_value 'auxdate' => (
+    isa         => 'Date',
     );
-
-for my $d ('date', 'auxdate') {
-    around $d => sub {
-	my $orig = shift;
-	my $self = shift;
-	
-	return $self->$orig()
-	    unless @_;
-	
-	my $date = shift;
-	if (ref(\$date) eq "SCALAR") {
-	    # assuming a String we will try to convert
-	    my $res=$self->_parse_date($date);
-	    return $self->$orig($res->[1]);
-	}
-	return $self->$orig($date);
-    };
-}
 
 has 'state' => (
     is       => 'rw',
@@ -134,10 +109,6 @@ around 'note' => sub {
 };
 
 
-# note: $RE_xxx is capturing, $re_xxx is non-capturing
-our $re_date = qr!(?:\d{4}[/-])?\d{1,2}[/-]\d{1,2}!;
-our $RE_date = qr!(?:(\d{4})[/-])?(\d{1,2})[/-](\d{1,2})!;
-
 
 
 
@@ -149,49 +120,14 @@ sub _readEnded {
     return ($line !~ /\S/ || $line =~ /^\S/);
 }
 
-sub _parse_date {
-    my ($self, $str) = @_;
-    return [400,"Invalid date syntax '$str'"] unless $str =~ /\A(?:$RE_date)\z/;
-
-    my $tm;
-    eval {
-	# Argh : Time::Moment is doing a better validation
-	# but Time::Piece allow any format (as --input-date-format in ledger)
-	if (1) {
-	    if ($self->config->input_date_format eq 'YYYY/DD/MM') {
-		$tm = Time::Moment->new(
-		    day => $2,
-		    month => $3,
-		    year => $1 || $self->config->year,
-		    );
-	    } else {
-		$tm = Time::Moment->new(
-		    day => $3,
-		    month => $2,
-		    year => $1 || $self->config->year,
-		    );
-	    }
-	    $tm = Time::Piece->strptime(
-		$tm->strftime($self->config->date_format),
-		$self->config->date_format
-		);
-	} else {
-	    $str =~ s,/,-,g;
-	    $tm = Time::Piece->strptime($str, $self->config->input_date_format);
-	}
-    };
-    if ($@) { return [400, "Invalid date '$str' for ".$self->config->input_date_format.": $@"] }
-    [200, $tm];
-}
-
 before 'load_from_reader' => sub {
     my $self = shift;
     my $reader = shift;
 
     my $line = $reader->pop_line;
     if ($line !~ m
-	<^($re_date)                    # 1) actual date
-	(?: = ($re_date))? (\s+)        # 2) effective date 3) ws
+	<^([0-9]\S*)                    # 1) actual date
+	(?: = ([0-9]\S*))? (\s+)        # 2) effective date 3) ws
 	(?: ([!*]) (\s*) )?             # 4) state 5) ws
 	(?: \(([^\)]+)\) (\s*))?        # 6) code 7) ws
 	(\S.*?)                         # 8) desc
@@ -205,27 +141,26 @@ before 'load_from_reader' => sub {
 	    'message' => "not an initial transaction line",
 	    );
     }
-    my $parsed_date=$self->_parse_date($1);
-    if ($parsed_date->[0] != 200) {
+    my $e;
+    try {
+	$self->date($1);
+	$self->auxdate($2) if defined($2);
+	$self->state($4) if defined($4);
+	$self->code($6) if defined($6);
+	$self->description($8);
+	$self->note($10) if defined($10);
 	$self->_cached_text($line);
-	$self->_err($reader->error_prefix.$parsed_date->[1]);
     }
-    $self->date($parsed_date->[1]);
-
-    if (defined($2)) {
-	$parsed_date=$self->_parse_date($2);
-	if ($parsed_date->[0] != 200) {
-	    $self->_cached_text($line);
-	    $self->_err($reader->error_prefix.$parsed_date->[1]);
-	}
-	$self->auxdate($parsed_date->[1]);
+    catch (Ledger::Exception::ValueParseError $e) {
+	my $msg=$e->message;
+	$reader->give_back_next_line($line);
+	die Ledger::Exception::ParseError->new(
+	    'line' => $line,
+	    'parser_prefix' => $reader->error_prefix,
+	    'message' => "while reading transaction: $msg",
+	    'abortParsing' => 1,
+	    );
     }
-
-    $self->state($4) if defined($4);
-    $self->code($6) if defined($6);
-    $self->description($8);
-    $self->note($10) if defined($10);
-    $self->_cached_text($line);
 };
 
 sub compute_text {
@@ -236,12 +171,12 @@ sub compute_text {
     push @formatParams, Ledger::Util->buildFormatParam(
 	'date',
 	'object' => $self,
-	'value' => $self->date->strftime($self->config->date_format),
+	'value' => $self->date,
 	);
     push @formatParams, Ledger::Util->buildFormatParam(
 	'auxdate',
 	'object' => $self,
-	'value' => ($self->auxdate // localtime)->strftime($self->config->date_format),
+	'value' => $self->auxdate,
 	);
     push @formatParams, Ledger::Util->buildFormatParam(
 	'state',
@@ -368,7 +303,6 @@ around BUILDARGS => sub {
     if (exists($hash{'reader'})) {
 	# date and description will be set with the reader informations
 	# setting fake values for now
-        $hash{'date'} = localtime;
 	$hash{'description'}='';
     }
     return $class->$orig(%hash);

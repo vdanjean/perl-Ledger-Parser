@@ -37,6 +37,12 @@ has 'suggestionTypes' => (
 	#sorted_options => 'sort',
     },
     );
-    
+
+has 'abortParsing' => (
+    is       => 'ro',
+    required => 1,
+    default  => 0,
+    );
+
 1;
 

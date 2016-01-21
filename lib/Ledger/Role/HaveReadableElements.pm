@@ -32,6 +32,10 @@ sub load_from_reader {
 		$self->_add_element($elem);
 	    }
 	    catch (Ledger::Exception::ParseError $e) {
+		if ($e->abortParsing) {
+		    @elementKinds=();
+		    @errors=();
+		}
 		push @errors, $e;
 		unshift @elementKinds, @{$e->suggestionTypes};
 	    };
