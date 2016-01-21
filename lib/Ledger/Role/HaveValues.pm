@@ -49,4 +49,12 @@ before 'cleanup' => sub {
     map { $_->cleanup(@_); } $self->all_values;
 };
 
+sub validateValues {
+    my $self=shift;
+    my @res = map {
+	my $meth=$_.'_validate';
+	$self->$meth(@_);
+    } $self->all_value_names;
+}
+
 1;

@@ -9,7 +9,7 @@ with (
     'Ledger::Role::HaveReadableElementsList',
     'Ledger::Role::HaveJournalElements' => {
 	-alias => {
-	    _validateElements => 'validate',
+	    validateElements => 'validate',
 	    as_string => '_as_string',
 	},
     },

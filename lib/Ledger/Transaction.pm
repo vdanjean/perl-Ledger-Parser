@@ -42,6 +42,7 @@ has_value 'date' => (
     
 has_value 'auxdate' => (
     isa         => 'Date',
+    required    => 1,
     );
 
 has 'state' => (
@@ -171,12 +172,12 @@ sub compute_text {
     push @formatParams, Ledger::Util->buildFormatParam(
 	'date',
 	'object' => $self,
-	'value' => $self->date,
+	'value' => $self->date_str,
 	);
     push @formatParams, Ledger::Util->buildFormatParam(
 	'auxdate',
 	'object' => $self,
-	'value' => $self->auxdate,
+	'value' => $self->auxdate_str,
 	);
     push @formatParams, Ledger::Util->buildFormatParam(
 	'state',

@@ -35,7 +35,7 @@ sub has_value {
 		$type=$t;
 		last TYPE;
 	    }
-	    #print $@;
+	    print $@;
 	}
 	die "Unkwown value type '".$attrtype."'";
     }
@@ -45,9 +45,11 @@ sub has_value {
 	is        => 'bare',
 	isa       => $type,
 	handles   => { 
-	    $name           => 'value',
-	    'has_'.$name    => 'present',
-	    'clear_'.$name  => 'reset',
+	    $name             => 'value',
+	    'has_'.$name      => 'present',
+	    'clear_'.$name    => 'reset',
+	    $name.'_str'      => 'as_string',
+	    $name.'_validate' => 'validate',
 	},
 	required  => 1,
 	default   => sub {
@@ -57,6 +59,7 @@ sub has_value {
 	    my $attr=$type->builder(
 		'parent' => $self,
 		'required' => $required,
+		'name' => $name,
 		);
 	    $self->_register_value($name, $attr);
 	    return $attr;
@@ -65,7 +68,7 @@ sub has_value {
 	init_arg  => undef,
 	);
     #print "Methode: ",$meta->find_method_by_name('_register_value_name'), "\n";
-    #$meta->find_method_by_name('_register_value_name')->execute($meta, $name);
+    $meta->find_method_by_name('_register_value_name')->execute($meta, $name);
 }
 
 1;

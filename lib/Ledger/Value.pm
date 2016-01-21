@@ -3,10 +3,6 @@ use Moose;
 use namespace::sweep;
 use Ledger::Exception::ValueParseError;
 
-sub validate {
-    return 1;
-}
-
 sub builder {
     my $class=shift;
     return $class->new(@_);

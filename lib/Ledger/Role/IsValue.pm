@@ -9,7 +9,7 @@ with (
 
 #requires 'value';
 
-has 'raw_value' => (
+has 'value' => (
     is       => 'rw',
     isa      => 'Ledger::Internal::Error', # must be specialized
     trigger  => sub {
@@ -20,14 +20,11 @@ has 'raw_value' => (
     clearer  => 'reset',
     );
 
-sub value {
-    my $self = shift;
-
-    return $self->raw_value(@_) if @_;
-    return undef if ! $self->present;
-    #print "Getting as string for ".blessed($self)."\n";
-    return $self->as_string;
-}
+has 'name' => (
+    is        => 'ro',
+    isa       => 'Str',
+    required  => 1,
+    );
 
 has 'required' => (
     is       => 'ro',
@@ -42,5 +39,14 @@ after '_clear_cached_text' => sub {
     #blessed($self->parent), "\n";
     $self->parent->_clear_cached_text;
 };
+
+sub validate {
+    my $self = shift;
+    print "Validating ".blessed($self)." for attr ".$self->name.
+	": ".$self->present."/".$self->required."\n";
+    if ( $self->required && ! $self->present) {
+	die "Missing required value '".$self->name."' in\n".$self->parent->as_string."\n";
+    }
+}
 
 1;

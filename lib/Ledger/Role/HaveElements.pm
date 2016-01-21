@@ -41,5 +41,10 @@ before 'cleanup' => sub {
     $self->_map_elements( sub { $_->cleanup(@_); } );
 };
 
+sub validateElements {
+    my $self=shift;
+    my @res = $self->_map_elements(sub { $_->validate(@_); })
+}
+
 1;
 

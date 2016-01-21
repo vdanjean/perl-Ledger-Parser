@@ -14,10 +14,4 @@ has '+elements' => (
     isa      => 'ArrayRef[Ledger::Journal::Element]',
     );
 
-override 'validate' => sub {
-    my $self=shift;
-    super();
-    $self->_validateElements;
-};
-
 1;

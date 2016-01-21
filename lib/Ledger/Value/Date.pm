@@ -11,7 +11,7 @@ with (
     'Ledger::Role::IsValue',
     );
 
-has '+raw_value' => (
+has '+value' => (
     isa      => 'Time::Piece',
     );
 
@@ -80,7 +80,8 @@ sub _parse_date {
 sub compute_text {
     my $self = shift;
 
-    return $self->raw_value->strftime($self->config->date_format);
+    return '' if ! $self->present;
+    return $self->value->strftime($self->config->date_format);
 }
 
 around 'value' => sub {
