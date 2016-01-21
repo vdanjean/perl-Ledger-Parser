@@ -3,6 +3,7 @@ use Moose;
 use namespace::sweep;
 use Ledger::Util::Reader;
 use Ledger::Journal;
+use Ledger::Role::IsValue; # to force load order
 
 with (
     'Ledger::Role::Config',

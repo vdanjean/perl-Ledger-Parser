@@ -1,7 +1,7 @@
 package Ledger::Role::HaveValues;
 use Moose::Role;
 use MooseX::ClassAttribute;
-use Ledger::Role::IsValue ();
+use Ledger::Role::IsValue;
 
 has 'values' => (
     traits    => ['Hash'],    
