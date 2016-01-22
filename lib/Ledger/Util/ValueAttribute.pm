@@ -11,7 +11,7 @@ Moose::Exporter->setup_import_methods(
 
 use UNIVERSAL::require;
 sub has_value {
-    #print "'", join("', '",@_), "'\n";
+    print "'", join("', '",@_), "'\n";
     my ( $meta, $name, %attr ) = @_;
 #    my $meta = shift;
 #    my $name = shift;
@@ -26,11 +26,14 @@ sub has_value {
 	$buildhash{'value'}=$attr{'default'};
 	$buildhash{'default_value'}=$attr{'default'};
     }
+    if (exists($attr{'format_type'})) {
+	$buildhash{'format_type'}=$attr{'format_type'};
+    }
 
     my $role='Ledger::Role::HaveValues';
     if (! $meta->does_role($role)) {
 	print "Registering $role\n";
-	#$role->meta->apply($meta);
+	$role->meta->apply($meta);
 	#$meta->add_role($role->meta);
 	#$role='Ledger::Role::HaveParent';
     }
@@ -55,9 +58,10 @@ sub has_value {
 	    $name             => 'value',
 	    'has_'.$name      => 'present',
 	    'clear_'.$name    => 'reset',
-	    $name.'_str'      => 'as_string',
+	    $name.'_str'      => 'value_str',
 	    $name.'_validate' => 'validate',
 	},
+	reader    => '_'.$name.'_rawvalue',
 	required  => 1,
 	default   => sub {
 	    my $self=shift;
@@ -73,6 +77,7 @@ sub has_value {
 	},
 	lazy      => 1,
 	init_arg  => undef,
+	%attrhash,
 	);
     #print "Methode: ",$meta->find_method_by_name('_register_value_name'), "\n";
     $meta->find_method_by_name('_register_value_name')->execute($meta, $name);

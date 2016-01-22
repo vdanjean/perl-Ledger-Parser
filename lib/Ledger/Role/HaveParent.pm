@@ -2,10 +2,11 @@ package Ledger::Role::HaveParent;
 use Moose::Role;
 use Ledger::Role::HaveElements;
 use Ledger::Role::HaveValues;
+use Ledger::Role::IsValueBase;
 
 has 'parent' => (
     is        => 'ro',
-    isa       => 'Ledger::Role::HaveElements|Ledger::Role::HaveValues',
+    isa       => 'Ledger::Role::HaveElements|Ledger::Role::HaveValues|Ledger::Role::IsValueBase',
     required  => 1,
     weak_ref  => 1,
     );
@@ -18,6 +19,26 @@ sub journal {
 sub config {
     my $self = shift;
     return $self->journal->config;
+}
+
+sub _value_updated {
+    my $self=shift;
+
+    #print "*** In after _clear_cached_text in ", blessed($self), ' with parent ',
+    #blessed($self->parent), "\n";
+    #print join(', ', @_), "\n";
+    #if ( @_ > 2 ) {
+    #	# if this is the first setting time, no need to invalidate the cache
+    #	# as it is empty
+
+    if ($self->does('Ledger::Role::HaveCachedText')) {
+	if ($self->_text_cached) {
+	    $self->_clear_cached_text;
+	    $self->parent->_value_updated;
+	}
+    } else {
+	$self->parent->_value_updated;
+    }
 }
 
 1;

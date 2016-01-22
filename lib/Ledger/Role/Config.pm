@@ -31,8 +31,13 @@ has 'transaction_format' => (
 has 'posting_format' => (
     is          => 'rw',
     isa         => 'Str',
-    default     => '    @{account:%-35s}  @{amount:%10.2f:%10s:%7d   }'.
-    '@{commodity: %-3s} @{note:%s}',
+    default     => '    @{account:%-35s}  @{amount:%s:%13s}@{note:  ; %s:%s}',
+    );
+
+has 'amount_format' => (
+    is          => 'rw',
+    isa         => 'Str',
+    default     => '@{amount:%10.2f:%10s:%7d   }@{commodity: %-3s}',
     );
 
 1;

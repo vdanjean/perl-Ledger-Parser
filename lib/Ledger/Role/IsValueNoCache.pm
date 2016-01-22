@@ -1,22 +1,24 @@
-package Ledger::Role::IsValue;
+package Ledger::Role::IsValueNoCache;
 use Moose::Role;
 use namespace::sweep;
 use Ledger::Exception::Validation;
 
 with (
     'Ledger::Role::IsValueBase',
-    'Ledger::Role::HaveCachedText',
     );
 
 sub value_str {
     my $self = shift;
 
     return $self->as_string unless @_;
+
+    die "Internal error: a value without cache is not parsable";
+}
+
+sub as_string {
+    my $self = shift;
     
-    my $val = shift;
-    my $ret = $self->value($val);
-    $self->_cached_text($val);
-    return $ret;
+    return $self->compute_text
 }
 
 1;

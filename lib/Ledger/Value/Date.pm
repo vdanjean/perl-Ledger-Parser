@@ -93,10 +93,7 @@ around 'value' => sub {
     my $date = shift;
     if (ref(\$date) eq "SCALAR") {
 	# assuming a String we will try to convert
-	my $res=$self->_parse_date($date);
-	my $r = $self->$orig($res);
-	$self->_cached_text($date);
-	return $r;
+	$date=$self->_parse_date($date);
     }
     return $self->$orig($date);
 };

@@ -62,13 +62,41 @@ sub formatValueParams {
 
     return map {
 	my $name=$_;
-	my $name_str=$name.'_str';
+	my $_name_rawvalue='_'.$name.'_rawvalue';
+	my $type = $self->$_name_rawvalue->format_type;
+	my %params=();
+	if ($type eq 'string') {
+	    $params{'value'} = $self->$_name_rawvalue->value_str;
+	} elsif ($type eq 'skip') {
+	    return;
+	} elsif ($type eq 'Num') {
+	} else {
+	    print "**** unknown format type $type for $name\n";
+	}
 	Ledger::Util->buildFormatParam(
 	    $name,
 	    'object' => $self,
-	    'value' => $self->$name_str,
+	    'type' => $self->$_name_rawvalue->format_type,
+	    %params,
 	    );
     } $self->all_value_names;
+}
+
+sub compute_text_from_values {
+    my $self = shift;
+    my $format = shift;
+    my @formatParams=();
+
+    push @formatParams, $self->formatValueParams();
+
+    my $str=Ledger::Util->format(
+	$format => {@formatParams}
+	);
+    if ($str->[0] != 200) {
+	$self->_err($str->[1]);
+    }
+    $str->[1] =~ s/\h+(\R?)\z/$1/m;
+    return $str->[1];
 }
 
 1;

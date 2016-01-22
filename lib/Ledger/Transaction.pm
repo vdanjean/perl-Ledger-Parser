@@ -94,12 +94,12 @@ before 'load_from_reader' => sub {
     }
     my $e;
     try {
-	$self->date($1);
-	$self->auxdate($2) if defined($2);
-	$self->state($4) if defined($4);
-	$self->code($6) if defined($6);
-	$self->description($8);
-	$self->note($10) if defined($10);
+	$self->date_str($1);
+	$self->auxdate_str($2) if defined($2);
+	$self->state_str($4) if defined($4);
+	$self->code_str($6) if defined($6);
+	$self->description_str($8);
+	$self->note_str($10) if defined($10);
 	$self->_cached_text($line);
     }
     catch (Ledger::Exception::ValueParseError $e) {
@@ -116,19 +116,10 @@ before 'load_from_reader' => sub {
 
 sub compute_text {
     my $self = shift;
-    my $transactionFormat = $self->config->transaction_format;
-    my @formatParams=();
 
-    push @formatParams, $self->formatValueParams();
-
-    my $str=Ledger::Util->format(
-	$transactionFormat => {@formatParams}
+    return $self->compute_text_from_values(
+	$self->config->transaction_format."\n",
 	);
-    if ($str->[0] != 200) {
-	$self->_err($str->[1]);
-    }
-    $str->[1] =~ s/\s+$//;
-    return $str->[1]."\n";
 }
 
 sub _printable_elements {
@@ -166,7 +157,7 @@ override 'validate' => sub {
 	    my @postings=$self->_filter_elements(
 		sub {
 		    $_->isa('Ledger::Posting')
-			&& $_->kind eq $kind;
+			&& $_->account->kind eq $kind;
 		}
 		);
 	    my $num_postings = scalar(@postings);
@@ -179,11 +170,11 @@ override 'validate' => sub {
 	    my $num_nulls = 0;
 	    my %bals; # key = commodity
 	    for my $p (@postings) {
-		if (!$p->has_amount) {
+		if (!$p->amount->has_amount) {
 		    $num_nulls++;
 		    next;
 		}
-		$bals{$p->commodity} += $p->amount;
+		$bals{$p->amount->commodity_str} += $p->amount->amount;
 	    }
 	    last CHECK if $num_nulls == 1;
 	    if ($num_nulls) {

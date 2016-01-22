@@ -29,17 +29,12 @@ around 'value' => sub {
     return $self->$orig()
 	unless @_;
 
-    my $ret;
     my $state = shift;
     $state =~ s/\s//g;
     if (Ledger::Transaction::State->isSymbol($state)) {
 	$state=Ledger::Transaction::State->fromSymbol($state);
-	$ret=$self->$orig($state, 'clear_cache' => 0);
-	$self->_cached_text($state);
-    } else {
-	$ret=$self->$orig($state);
     }
-    return $ret;
+    return $self->$orig($state);
 };
 
 1;
