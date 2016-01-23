@@ -53,7 +53,7 @@ sub _parse_account {
     unless (!$oparen && !$cparen ||
 	    $oparen eq '[' && $cparen eq ']' ||
 	    $oparen eq '(' && $cparen eq ')') {
-	die_bad_string(
+	$self->die_bad_string(
 	    $str,
 	    "invalid account syntax:".
 	    " parentheses/braces around account don't match");

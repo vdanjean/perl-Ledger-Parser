@@ -3,15 +3,16 @@ use Moose ();
 use Moose::Exporter;
 use Scalar::Util qw(blessed);
 use Ledger::Role::HaveValues;
+#use Moose::Util qw/find_meta does_role apply_all_roles/;;
 
 Moose::Exporter->setup_import_methods(
     with_meta => [ 'has_value' ],
-    also      => 'Moose',
+    #also      => 'Moose',
     );
 
 use UNIVERSAL::require;
 sub has_value {
-    print "'", join("', '",@_), "'\n";
+    #print "'", join("', '",@_), "'\n";
     my ( $meta, $name, %attr ) = @_;
 #    my $meta = shift;
 #    my $name = shift;
@@ -20,6 +21,7 @@ sub has_value {
     my $type;
     my %buildhash=(
 	'required' => $attr{'required'} // 0,
+	'reset_on_cleanup' => $attr{'reset_on_cleanup'} // 0,
 	);
     my %attrhash=();
     if (exists($attr{'default'})) {
@@ -32,11 +34,26 @@ sub has_value {
 
     my $role='Ledger::Role::HaveValues';
     if (! $meta->does_role($role)) {
-	print "Registering $role\n";
+	if ($meta->isa("Moose::Meta::Role")) {
+	    die "missing \"with '$role';\" in ".$meta->name."\n";
+	}
+	#print "=> [".$meta->name."] Registering $role to $meta\n";
 	$role->meta->apply($meta);
+	#apply_all_roles($meta, $role);
+	# meta has been modified/reinstanciated. We reload it
+	$meta = ($meta->name)->meta;
+	#my @roles=$meta->calculate_all_roles_with_inheritance;
+	#print "roles=@roles\n";
+	#print "   Current roles :\n     ".join(
+	#    "\n     ",
+	#    (map { $_->name }
+	#     $meta->calculate_all_roles_with_inheritance))."\n";
+	#print "=> [".$meta->name."] Registered $role to $meta\n";
 	#$meta->add_role($role->meta);
 	#$role='Ledger::Role::HaveParent';
     }
+    #print "<= Registered $role to $meta ".$meta->name."\n";
+    #print "   [".$meta->name."] Adding Value attribute $name ($meta)\n";
 
   TYPE:
     while(1) {
@@ -79,8 +96,7 @@ sub has_value {
 	init_arg  => undef,
 	%attrhash,
 	);
-    #print "Methode: ",$meta->find_method_by_name('_register_value_name'), "\n";
-    $meta->find_method_by_name('_register_value_name')->execute($meta, $name);
+    #$meta->find_method_by_name('_register_value_name')->execute($meta, $name);
 }
 
 1;

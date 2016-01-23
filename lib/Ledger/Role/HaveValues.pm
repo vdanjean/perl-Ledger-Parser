@@ -4,7 +4,7 @@ use MooseX::ClassAttribute;
 use Ledger::Role::IsValue;
 
 has 'values' => (
-    traits    => ['Hash'],    
+    traits    => ['Hash'],
     is        => 'ro',
     isa       => 'HashRef[Ledger::Role::IsValue]',
     required => 1,
@@ -22,16 +22,20 @@ has 'values' => (
 	#has_no_types=> 'is_empty',
 	#sorted_options => 'sort',
     },
+    lazy      => 1,
     );
 
 class_has 'value_names' => (
-    traits    => ['Array'],    
+    traits    => ['Array'],
     is        => 'ro',
     isa       => 'ArrayRef[Str]',
-    default  => sub { [] },
+    default  => sub {
+	my $self = shift;
+	return _register_value_names($self);
+    },
     handles  => {
 	all_value_names       => 'elements',
-	_register_value_name  => 'push',
+	#_register_value_name  => 'push',
 	#_map_types       => 'map',
 	#_filter_types=> 'grep',
 	#find_element   => 'first',
@@ -39,10 +43,32 @@ class_has 'value_names' => (
 	#join_elements  => 'join',
 	#count_types => 'count',
 	#has_options    => 'count',
-	#has_no_types=> 'is_empty',
+	#_has_no_value_names => 'is_empty',
 	#sorted_options => 'sort',
     },
+    lazy => 1,
     );
+
+sub _register_value_names {
+    my $class = shift;
+    my $info = shift // "constructor";
+    my $meta = $class;
+    my $value_names=[];
+
+    if (not $class->isa('Moose::Meta::Class')) {
+	$meta=$class->meta;
+    }
+
+    #print "Attributes ($info) in ".$meta->name." / $meta\n";
+    for my $attr ( $meta->get_all_attributes ) {
+	my $v = $attr->type_constraint->is_a_type_of("Ledger::Value");
+	#print "  + ",$attr->name, " ($v)\n";
+	if ($v) {
+	    push @$value_names, $attr->name;
+	}
+    }
+    return $value_names;
+}
 
 before 'cleanup' => sub {
     my $self = shift;

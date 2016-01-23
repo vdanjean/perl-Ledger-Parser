@@ -34,13 +34,34 @@ sub _setupElementKinds {
 	];
 }
 
+has_value 'ws1' => (
+    isa              => 'WS1',
+    required         => 1,
+    reset_on_cleanup => 1,
+    default          => '    ',
+    );
+
 has_value 'account' => (
     isa      => 'PostingAccount',
     required => 1,
     );
 
+has_value 'ws2' => (
+    isa              => 'WS2',
+    required         => 1,
+    reset_on_cleanup => 1,
+    default          => '  ',
+    );
+
 has_value 'amount' => (
     isa      => 'PostingAmount',
+    );
+
+has_value 'ws3' => (
+    isa              => 'WS0',
+    required         => 1,
+    reset_on_cleanup => 1,
+    default          => '  ',
     );
 
 has_value 'note' => (
@@ -63,8 +84,8 @@ before 'load_from_reader' => sub {
     if ($line !~ m!
 	^(\s+)                       # 1) ws1
 	(\S.*?)                      # 2) account
-	(?: (\s{2,})(\S.*?) )?       # 3) ws2 4) amount
-	(?: (\s*) ;(.*?))?           # 5) ws 6) note
+	(?: (\s{2,}|\t)(\S.*?) )?    # 3) ws2 4) amount
+	(?: (\s*) ;\s?(.*?))?           # 5) ws3 6) note
 	(\R?)\z                      # 7) nl
                       !x) {
 	$reader->give_back_next_line($line);
@@ -76,8 +97,11 @@ before 'load_from_reader' => sub {
     }
     my $e;
     try {
+	$self->ws1_str($1);
 	$self->account_str($2);
+	$self->ws2_str($3) if defined($3);
 	$self->amount_str($4) if defined($4);
+	$self->ws3_str($5) if defined($5);
 	$self->note_str($6) if defined($6);
 	$self->_cached_text($line);
     }

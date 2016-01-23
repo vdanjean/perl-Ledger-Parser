@@ -1,23 +1,22 @@
 package Ledger::Role::IsNote;
 use Moose::Role;
 use namespace::sweep;
+use Ledger::Util::ValueAttribute;
 
-with ('Ledger::Role::HaveCachedText',
-      'Ledger::Role::Readable',
+with (
+    'Ledger::Role::HaveCachedText',
+    'Ledger::Role::Readable',
+    'Ledger::Role::HaveValues',
     );
 
-has '_start' => (
-    is       => 'rw',
+has_value '_start' => (
     isa      => 'Str',
-    default  => '    ',
-    trigger  => \&_note_clear_cached_text,
     );
 
-has 'comment_char' => (
-    is       => 'rw',
+has_value 'comment_char' => (
     isa      => 'Str',
     default  => ';',
-    trigger  => \&_note_clear_cached_text,
+    required => 1,
     );
 
 before 'comment_char' => sub {
@@ -32,30 +31,9 @@ before 'comment_char' => sub {
     }
 };
 
-has 'note' => (
-    is       => 'rw',
-    isa      => 'Str',
-    default  => '',
-    trigger  => \&_note_clear_cached_text,
+has_value 'note' => (
+    isa      => 'EndStrippedStr',
     );
-
-around 'note' => sub {
-    my $orig = shift;
-    my $self = shift;
-
-    return $self->$orig()
-	unless @_;
-
-    my $msg = shift;
-    $msg =~ s/\s*$//; # remove blank at the end
-    $msg =~ s/^(\S)/ $1/; # add a space if no blank at start
-    return $self->$orig($msg);
-};
-
-sub _note_clear_cached_text {
-    my $self = shift;
-    return $self->_clear_cached_text(@_);
-}
 
 sub _RE_comment_char {
     my $self = shift;

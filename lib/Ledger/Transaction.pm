@@ -20,7 +20,6 @@ with (
 	-alias => { as_string => '_as_string_elements' },
 	-excludes => [ 'as_string', '_printable_elements' ],
     },
-    'Ledger::Role::HaveValues',
     );
 
 has '+elements' => (

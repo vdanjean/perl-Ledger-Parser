@@ -35,11 +35,21 @@ has 'required' => (
     isa      => 'Bool',
     required => 1,
     default  => 0,
+    lazy     => 1,
     );
 
 has 'default_value' => (
     is        => 'ro',
+    isa       => 'Str',
     predicate => 'has_default_value',
+    );
+
+has 'reset_on_cleanup' => (
+    is         => 'ro',
+    isa        => 'Bool',
+    required   => 1,
+    default    => 0,
+    lazy       => 1,
     );
 
 has 'format_type' => (
@@ -53,7 +63,7 @@ sub reset {
     my $self = shift;
 
     if ($self->has_default_value && $self->required) {
-	$self->value($self->default_value);
+	$self->value_str($self->default_value);
     } else {
 	$self->_reset(@_);
     }
@@ -86,5 +96,12 @@ sub _compute_text {
     
     return "".$self->value;
 }
+
+before 'cleanup' => sub {
+    my $self = shift;
+    if ($self->reset_on_cleanup) {
+	$self->reset;
+    }
+};
 
 1;
