@@ -3,7 +3,7 @@ use Moose;
 use namespace::sweep;
 use Ledger::Types;
 use Ledger::Util;
-use Ledger::Types::PostingAmount;
+use Ledger::Value::SubType::PostingAmount;
 use utf8;
 
 extends 'Ledger::Value';
@@ -13,20 +13,21 @@ with (
     );
 
 has '+value' => (
-    isa      => 'Ledger::Types::PostingAmount',
+    isa      => 'Ledger::Value::SubType::PostingAmount',
     required => 1,
-    default  => sub {
-	my $self = shift;
-	Ledger::Types::PostingAmount->new(
-	    'parent' => $self,
-	    );
-    },
+    builder  => '_null_value',
     );
 
-sub _compute_text {
-    my $self = shift;
+# after because we define the 'value' method with 'around'
+with (
+    'Ledger::Role::HaveSubValues',
+    );
 
-    return $self->value->compute_text;
+sub _null_value {
+    my $self = shift;
+    return Ledger::Value::SubType::PostingAmount->new(
+	'parent' => $self,
+	);
 }
 
 our $re_commodity = qr/[A-Z_]+[A-Za-z_]*|[\$£€¥]/;
@@ -36,7 +37,7 @@ our $RE_amount = qr/(-?)
                     (\s*) ($re_commodity)?
                    /x;
 
-sub _parse_amount {
+sub _parse_str {
     my ($self, $str) = @_;
 
     $self->die_bad_string(
@@ -58,27 +59,5 @@ sub _parse_amount {
     $self->value->commodity($commodity1) if defined($commodity1);
     $self->value->commodity($commodity2) if defined($commodity2);
 }
-
-
-around 'value' => sub {
-    my $orig = shift;
-    my $self = shift;
-    
-    return $self->$orig()
-	unless @_;
-    
-    my $amount = shift;
-    if (ref(\$amount) eq "SCALAR") {
-	# assuming a String we will try to convert
-	$self->_parse_amount($amount);
-	return ;
-    }
-    return $self->$orig($amount);
-};
-
-before 'cleanup' => sub {
-    my $self = shift;
-    $self->value->cleanup(@_);
-};
 
 1;

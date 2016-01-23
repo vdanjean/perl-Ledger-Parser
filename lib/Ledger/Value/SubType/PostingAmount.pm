@@ -1,4 +1,4 @@
-package Ledger::Types::PostingAmount;
+package Ledger::Value::SubType::PostingAmount;
 use Moose;
 use Moose::Util::TypeConstraints;
 use namespace::sweep;

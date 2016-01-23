@@ -62,11 +62,13 @@ sub has_value {
 		$type=$t;
 		last TYPE;
 	    }
-	    print $@ if $@ !~ /^Can't locate /;
+	    $t =~ s,::,/,g;
+	    print $@ if $@ !~ /^Can't locate $t\.pm in /;
 	}
-	die "Unkwown value type '".$attrtype."'";
+	die "Unkwown Value type '".$attrtype.
+	    "'. Is 'has_class' from ".$meta->name." using a correct 'isa'?\n";
     }
-	    
+
     $meta->add_attribute(
 	$name,
 	is        => 'bare',

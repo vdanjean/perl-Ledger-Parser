@@ -3,7 +3,7 @@ use Moose;
 use namespace::sweep;
 use Ledger::Types;
 use Ledger::Util;
-use Ledger::Types::PostingAccount;
+use Ledger::Value::SubType::PostingAccount;
 use utf8;
 
 extends 'Ledger::Value';
@@ -13,20 +13,21 @@ with (
     );
 
 has '+value' => (
-    isa      => 'Ledger::Types::PostingAccount',
+    isa      => 'Ledger::Value::SubType::PostingAccount',
     required => 1,
-    default  => sub {
-	my $self = shift;
-	Ledger::Types::PostingAccount->new(
-	    'parent' => $self,
-	    );
-    },
+    builder  => '_null_value',
     );
 
-sub _compute_text {
-    my $self = shift;
+# after because we define the 'value' method with 'around'
+with (
+    'Ledger::Role::HaveSubValues',
+    );
 
-    return $self->value->compute_text;
+sub _null_value {
+    my $self = shift;
+    Ledger::Value::SubType::PostingAccount->new(
+	'parent' => $self,
+	);
 }
 
 our $re_account_part = qr/(?:
@@ -34,7 +35,7 @@ our $re_account_part = qr/(?:
                           )+?/x; # don't allow double whitespace
 our $re_account = qr/$re_account_part(?::$re_account_part)*/;
 
-sub _parse_account {
+sub _parse_str {
     my ($self, $str) = @_;
 
     $self->die_bad_string(
@@ -68,27 +69,5 @@ sub _parse_account {
 	die "Argh, what happens?";
     }
 }
-
-
-around 'value' => sub {
-    my $orig = shift;
-    my $self = shift;
-    
-    return $self->$orig()
-	unless @_;
-    
-    my $account = shift;
-    if (ref(\$account) eq "SCALAR") {
-	# assuming a String we will try to convert
-	$self->_parse_account($account);
-	return ;
-    }
-    return $self->$orig($account);
-};
-
-before 'cleanup' => sub {
-    my $self = shift;
-    $self->value->cleanup(@_);
-};
 
 1;
