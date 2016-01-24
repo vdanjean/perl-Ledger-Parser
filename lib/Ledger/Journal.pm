@@ -29,6 +29,7 @@ sub _setupElementKinds {
     return [
 	'Ledger::Journal::Note',
 	'Ledger::Journal::Blank',
+	'Ledger::Account',
 	'Ledger::Transaction',
 	];
 }

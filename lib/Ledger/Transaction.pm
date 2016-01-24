@@ -9,14 +9,7 @@ use Ledger::Util::ValueAttribute;
 extends 'Ledger::Journal::Element';
 
 with (
-    'Ledger::Role::HaveCachedText' => {
-	-alias => { as_string => '_as_string_main' },
-	-excludes => 'as_string',
-    },
-    'Ledger::Role::Readable',
-    'Ledger::Role::HaveReadableElementsList' => { -excludes => 'BUILD', },
-    'Ledger::Role::HaveElements' => {
-	-alias => { as_string => '_as_string_elements' },
+    'Ledger::Role::IsElementWithElements' => {
 	-excludes => [ 'as_string', '_printable_elements' ],
     },
     );
@@ -60,14 +53,6 @@ has_value 'note' => (
     isa      => 'MetaData',
     );
 
-sub _readEnded {
-    my $self = shift;
-    my $reader = shift;
-    my $line = $reader->next_line;
-
-    return ($line !~ /\S/ || $line =~ /^\S/);
-}
-
 before 'load_from_reader' => sub {
     my $self = shift;
     my $reader = shift;
@@ -83,11 +68,20 @@ before 'load_from_reader' => sub {
 	(\R?)\z                         # 11) nl
 	>x) {
 	$reader->give_back_next_line($line);
-	die Ledger::Exception::ParseError->new(
-	    'line' => $line,
-	    'parser_prefix' => $reader->error_prefix,
-	    'message' => "not an initial transaction line",
-	    );
+	if ($line =~ /^[0-9]/) {
+	    die Ledger::Exception::ParseError->new(
+		'line' => $line,
+		'parser_prefix' => $reader->error_prefix,
+		'message' => "invalid initial transaction line",
+		'abortParsing' => 1,
+		);
+	} else {
+	    die Ledger::Exception::ParseError->new(
+		'line' => $line,
+		'parser_prefix' => $reader->error_prefix,
+		'message' => "not an initial transaction line",
+		);
+	}
     }
     my $e;
     try {

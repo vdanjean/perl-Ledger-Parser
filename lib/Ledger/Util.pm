@@ -4,6 +4,15 @@ use warnings;
 use List::Util qw(min);
 use Math::BigRat;
 
+my $re_account_part = qr/(?:
+                              [^\s:\[\(;]+?[ ]??[^\s:\[\(;]*?
+                          )+?/x; # don't allow double whitespace nor tabulation
+my $re_account = qr/$re_account_part(?::$re_account_part)*/;
+
+sub re_account {
+    return $re_account;
+}
+
 sub format {
     my $class = shift;
     my $format = shift;
@@ -77,6 +86,17 @@ sub buildFormatParam {
 	push @fpar, "", "";
     }
     return $name, \@fpar;
+}
+
+our (@ISA, @EXPORT_OK, %EXPORT_TAGS);
+BEGIN {
+    require Exporter;
+    @ISA = qw(Exporter);
+    @EXPORT_OK = qw(format buildFormatParam re_account);
+    %EXPORT_TAGS = (
+	'regexp' => ['re_account'],
+	'all' => \@EXPORT_OK,
+	);
 }
 
 1;

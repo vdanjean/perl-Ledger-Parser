@@ -47,6 +47,7 @@ before '_registerElementKind' => sub {
     my @kinds = @_;
     #print "Registering by push ", join(", ", @kinds), "\n";
     for my $kind (@kinds) {
+	#print "kind $kind in ",$self->meta->name,"\n";
 	$kind->require or die $@;
     }
 };
@@ -56,7 +57,7 @@ sub BUILD {}
 before 'BUILD' => sub {
     my $self = shift;
     if ($self->_elementKindsRegistrationRequired) {
-	$self->_doElementKindsRegistration();
+	$self->_registerElementKind(@{$self->_setupAndRegisterElementKinds});
     }
 };
 

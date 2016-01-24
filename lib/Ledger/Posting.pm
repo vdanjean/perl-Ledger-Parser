@@ -10,16 +10,7 @@ use utf8;
 extends 'Ledger::Transaction::Element';
 
 with (
-    'Ledger::Role::HaveCachedText' => {
-	-alias => { as_string => '_as_string_main' },
-	-excludes => 'as_string',
-    },
-    'Ledger::Role::Readable',
-    'Ledger::Role::HaveReadableElementsList' => { -excludes => 'BUILD', },
-    'Ledger::Role::HaveElements' => {
-	-alias => { as_string => '_as_string_elements' },
-	-excludes => [ 'as_string' ],
-    },
+    'Ledger::Role::IsElementWithElements',
     );
 
 has '+elements' => (
@@ -120,25 +111,6 @@ sub compute_text {
     return $self->compute_text_from_values(
 	$self->config->posting_format."\n",
 	);
-}
-
-sub as_string {
-    my $self = shift;
-    return $self->_as_string_main
-	.$self->_as_string_elements;
-}
-
-use Carp;
-sub _err {
-    my ($self, $msg) = @_;
-    croak join(
-        "",
-        #@{ $self->{_include_stack} } ? "$self->{_include_stack}[0] " : "",
-        #"line $self->{_linum}: ",
-        $msg." in\n".$self->as_string,
-	"from transaction\n",
-	$self->parent->as_string,
-    );
 }
 
 1;

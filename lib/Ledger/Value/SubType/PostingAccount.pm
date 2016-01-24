@@ -4,6 +4,7 @@ use Moose::Util::TypeConstraints;
 use namespace::sweep;
 use Math::BigRat;
 use Ledger::Util::ValueAttribute;
+use Ledger::Util qw(:regexp);
 
 with (
     'Ledger::Role::IsSubValue',
@@ -57,10 +58,7 @@ sub compute_text {
     return $str->[1];
 }
 
-our $re_account_part = qr/(?:
-                              [^\s:\[\(;]+?[ \t]??[^\s:\[\(;]*?
-                          )+?/x; # don't allow double whitespace
-our $re_account = qr/$re_account_part(?::$re_account_part)*/;
+my $re_account=re_account;
 
 sub parse_str {
     my ($self, $str) = @_;
