@@ -9,30 +9,15 @@ with (
     'Ledger::Role::HaveValues',
     );
 
-has_value '_start' => (
-    isa      => 'Str',
-    );
-
-has_value 'comment_char' => (
-    isa      => 'Str',
-    default  => ';',
+has_value 'ws1' => (
+    isa      => 'WS1',
     required => 1,
+    default  => '    ',
+    reset_on_cleanup => 1,    
     );
-
-before 'comment_char' => sub {
-    my $self = shift;
-    return unless @_;
-    my $char = shift;
-    my $RE_comment_char=$self->_RE_comment_char;
-    
-    if ($char !~ /^$RE_comment_char$/) {
-	die "Invalid char comment '$char' to introduce comment in a '".
-	    $self->parent->meta->name."' object";
-    }
-};
 
 has_value 'note' => (
-    isa      => 'EndStrippedStr',
+    isa      => 'MetaData',
     );
 
 sub _RE_comment_char {
@@ -58,7 +43,7 @@ sub load_from_reader {
     my $line = $reader->pop_line;
     my $RE_comment_char=$self->_RE_comment_char;
     my $RE_before_comment=$self->_RE_before_comment;
-    if ($line !~ /^($RE_before_comment)($RE_comment_char)(.*?)(\R?)\z/) {
+    if ($line !~ /^(\s+);(.*?)(\R?)\z/) {
 	$reader->give_back_next_line($line);
 	die Ledger::Exception::ParseError->new(
 	    'line' => $line,
@@ -66,15 +51,14 @@ sub load_from_reader {
 	    'message' => "not a comment line",
 	    );
     }
-    $self->_start($1);
-    $self->comment_char($2);
-    $self->note($3);
+    $self->ws1($1);
+    $self->note($2);
     $self->_cached_text($line);
 };
 
 sub compute_text {
     my $self = shift;
-    return $self->_start.$self->comment_char.$self->note."\n";
+    return $self->ws1_str.';'.$self->note_str."\n";
 }
 
 1;

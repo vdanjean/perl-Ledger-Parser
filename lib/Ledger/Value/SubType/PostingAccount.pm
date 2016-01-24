@@ -6,7 +6,7 @@ use Math::BigRat;
 use Ledger::Util::ValueAttribute;
 
 with (
-    'Ledger::Role::HaveParent',
+    'Ledger::Role::IsSubValue',
     );
 
 has_value 'name' => (
@@ -57,6 +57,44 @@ sub compute_text {
     return $str->[1];
 }
 
-sub cleanup {}
+our $re_account_part = qr/(?:
+                              [^\s:\[\(;]+?[ \t]??[^\s:\[\(;]*?
+                          )+?/x; # don't allow double whitespace
+our $re_account = qr/$re_account_part(?::$re_account_part)*/;
+
+sub parse_str {
+    my ($self, $str) = @_;
+
+    $self->die_bad_string(
+	$str,
+	'invalid account syntax')
+	unless $str =~ /\A(
+            (\[|\()?                     # 2) oparen
+	    ($re_account)                # 3) account
+	    (\]|\))?                     # 4) cparen
+            )\z/x;
+
+    $self->name_str($3);
+
+    # brace must match
+    my ($oparen, $cparen) = ($2 // '', $4 // '');
+    unless (!$oparen && !$cparen ||
+	    $oparen eq '[' && $cparen eq ']' ||
+	    $oparen eq '(' && $cparen eq ')') {
+	$self->die_bad_string(
+	    $str,
+	    "invalid account syntax:".
+	    " parentheses/braces around account don't match");
+    }
+    if ($oparen eq '') {
+	$self->kind(Ledger::Posting::Kind::REAL);
+    } elsif ($oparen eq '[') {
+	$self->kind(Ledger::Posting::Kind::VIRTUALBALANCED);
+    } elsif ($oparen eq '(') {
+	$self->kind(Ledger::Posting::Kind::VIRTUALUNBALANCED);
+    } else {
+	die "Argh, what happens?";
+    }
+}
 
 1;

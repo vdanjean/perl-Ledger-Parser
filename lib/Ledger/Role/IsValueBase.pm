@@ -6,6 +6,7 @@ use Ledger::Exception::Validation;
 with (
     'Ledger::Role::HaveParent',
     'Ledger::Role::IsPrintable',
+    'Ledger::Role::ParseValue',
     );
 
 requires (

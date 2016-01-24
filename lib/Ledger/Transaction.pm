@@ -28,7 +28,6 @@ has '+elements' => (
 
 sub _setupElementKinds {
     return [
-	'Ledger::Transaction::Tag',
 	'Ledger::Transaction::Note',
 	'Ledger::Posting'
 	];
@@ -59,7 +58,7 @@ has_value 'description' => (
     );
 
 has_value 'note' => (
-    isa      => 'EndStrippedStr',
+    isa      => 'MetaData',
     );
 
 sub _readEnded {
@@ -81,7 +80,7 @@ before 'load_from_reader' => sub {
 	(?: ([!*]) (\s*) )?             # 4) state 5) ws
 	(?: \(([^\)]+)\) (\s*))?        # 6) code 7) ws
 	(\S.*?)                         # 8) desc
-	(?: (\s{2,} ;\s?)(.*) )?        # 9) ws 10) note
+	(?: (\s{2,} ;)(.*) )?           # 9) ws 10) note
 	(\R?)\z                         # 11) nl
 	>x) {
 	$reader->give_back_next_line($line);
@@ -200,23 +199,5 @@ sub _err {
         $msg#." in\n".$self->as_string
     );
 }
-
-around BUILDARGS => sub {
-    my $orig  = shift;
-    my $class = shift;
-    my %hash;
-
-    if ( @_ == 1 && ref $_[0] ) {
-        %hash=(%{$_[0]});
-    } else {
-        %hash=(@_);
-    }
-    if (exists($hash{'reader'})) {
-	# date and description will be set with the reader informations
-	# setting fake values for now
-	$hash{'description'}='';
-    }
-    return $class->$orig(%hash);
-};
 
 1;

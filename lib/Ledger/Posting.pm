@@ -29,7 +29,6 @@ has '+elements' => (
 
 sub _setupElementKinds {
     return [
-	'Ledger::Posting::Tag',
 	'Ledger::Posting::Note',
 	];
 }
@@ -65,7 +64,7 @@ has_value 'ws3' => (
     );
 
 has_value 'note' => (
-    isa      => 'EndStrippedStr',
+    isa      => 'MetaData',
     );
 
 sub _readEnded {
@@ -85,7 +84,7 @@ before 'load_from_reader' => sub {
 	^(\s+)                       # 1) ws1
 	(\S.*?)                      # 2) account
 	(?: (\s{2,}|\t)(\S.*?) )?    # 3) ws2 4) amount
-	(?: (\s*) ;\s?(.*?))?           # 5) ws3 6) note
+	(?: (\s*) ;(.*?))?           # 5) ws3 6) note
 	(\R?)\z                      # 7) nl
                       !x) {
 	$reader->give_back_next_line($line);

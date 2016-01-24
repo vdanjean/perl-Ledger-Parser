@@ -2,7 +2,6 @@ package Ledger::Role::HaveSubValues;
 use Moose::Role;
 use namespace::sweep;
 
-requires '_parse_str';
 requires '_null_value';
 
 has '_has_value' => (
@@ -58,4 +57,9 @@ before 'cleanup' => sub {
     $self->value->cleanup(@_);
 };
 
+sub _parse_str {
+    my $self = shift;
+
+    return $self->value->parse_str(@_);
+}
 1;
