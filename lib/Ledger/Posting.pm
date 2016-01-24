@@ -15,7 +15,6 @@ with (
 	-excludes => 'as_string',
     },
     'Ledger::Role::Readable',
-    'Ledger::Role::HaveMetadata',
     'Ledger::Role::HaveReadableElementsList' => { -excludes => 'BUILD', },
     'Ledger::Role::HaveElements' => {
 	-alias => { as_string => '_as_string_elements' },
