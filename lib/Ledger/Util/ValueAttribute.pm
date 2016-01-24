@@ -69,19 +69,27 @@ sub has_value {
 	    "'. Is 'has_class' from ".$meta->name." using a correct 'isa'?\n";
     }
 
+    if ($name !~ /^[+]/) {
+	%attrhash=(
+	    %attrhash,
+	    is        => 'bare',
+	    isa       => $type,
+	    handles   => {
+		$name             => 'value',
+		'has_'.$name      => 'present',
+		'clear_'.$name    => 'reset',
+		$name.'_str'      => 'value_str',
+		$name.'_validate' => 'validate',
+	    },
+	    reader    => '_'.$name.'_rawvalue',
+	    required  => 1,
+	    lazy      => 1,
+	    init_arg  => undef,
+	    );
+    }
+
     $meta->add_attribute(
 	$name,
-	is        => 'bare',
-	isa       => $type,
-	handles   => { 
-	    $name             => 'value',
-	    'has_'.$name      => 'present',
-	    'clear_'.$name    => 'reset',
-	    $name.'_str'      => 'value_str',
-	    $name.'_validate' => 'validate',
-	},
-	reader    => '_'.$name.'_rawvalue',
-	required  => 1,
 	default   => sub {
 	    my $self=shift;
 	    #print 'creating '.$name.' with parent: ', blessed($self), "\n";
@@ -94,8 +102,6 @@ sub has_value {
 	    $self->_register_value($name, $attr);
 	    return $attr;
 	},
-	lazy      => 1,
-	init_arg  => undef,
 	%attrhash,
 	);
     #$meta->find_method_by_name('_register_value_name')->execute($meta, $name);

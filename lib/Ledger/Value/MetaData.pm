@@ -45,7 +45,7 @@ sub _parse_str {
     my @msgs=();
 
     for my $type (@metadatatypes) {
-	print "Trying $type\n";
+	#print "Trying $type\n";
 	my $metadata;
 	try {
 	    my $realtype="Ledger::Value::SubType::$type";
@@ -54,15 +54,15 @@ sub _parse_str {
 		);
 	    my $res = $metadata->parse_str($str);
 	    $self->value($metadata);
-	    print "yes\n";
+	    #print "yes\n";
 	    return $res;
 	}
 	catch (Ledger::Exception::ValueParseError $e) {
-	    print "Catching error for $type ($str)\n";
+	    #print "Catching error for $type ($str)\n";
 	    push @msgs, $e->message;
 	}
     }
-    print "Dying\n";
+    #print "Dying\n";
     die Ledger::Exception::ValueParseError->new(
         'message' => "Unable to read metadata:\n    * ".join("\n    * ", @msgs),
         );
