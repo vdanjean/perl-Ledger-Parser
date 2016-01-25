@@ -46,7 +46,7 @@ sub load_from_reader {
 
 sub compute_text {
     my $self = shift;
-    return $self->commentchar.$self->ws1.$self->comment."\n";
+    return $self->commentchar_str.$self->ws1_str.$self->comment_str."\n";
 }
 
 1;

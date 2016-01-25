@@ -18,7 +18,7 @@ has_value 'ws1' => (
 );
 
 has_value 'name' => (
-    isa    => 'StrippedStr',
+    isa    => 'TagName',
 );
 
 has_value 'ws2' => (

@@ -61,8 +61,8 @@ before 'load_from_reader' => sub {
 	     (?<ws1>\s+)
 	     (?<name>.*\S)
 	                    >x,
-	'accept_error_msg' => "invalid account line (missing account name?)",
 	'noaccept_error_msg' => "not starting an account block",
+	'accept_error_msg' => "invalid account line (missing account name?)",
 	'parse_value_error_msg' => "invalid data in account line",
 	'store' => 'all',
 	);

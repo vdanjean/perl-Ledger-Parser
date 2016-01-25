@@ -31,6 +31,7 @@ sub _setupElementKinds {
 	'Ledger::Journal::Blank',
 	'Ledger::Journal::Note',
 	'Ledger::Account',
+	'Ledger::Journal::Tag',
 	];
 }
 
