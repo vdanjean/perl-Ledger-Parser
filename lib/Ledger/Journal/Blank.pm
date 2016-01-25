@@ -14,17 +14,12 @@ sub load_from_reader {
     my $self = shift;
     my $reader = shift;
 
-    my $line = $reader->pop_line;
-    if ($line !~ /\S/) {
-	$self->_cached_text($line);
-    } else {
-	$reader->give_back_next_line($line);
-	die Ledger::Exception::ParseError->new(
-	    'line' => $line,
-	    'parser_prefix' => $reader->error_prefix,
-	    'message' => "not a blank line",
-	    );
-    }
+    $self->load_from_reader_helper(
+	'reader' => $reader,
+	'accept_line_re' => qr/^\s*/,
+	'parse_line_re' => qr/^\s*/,
+	'noaccept_error_msg' => "not a blank line",
+	);
 };
 
 sub compute_text {

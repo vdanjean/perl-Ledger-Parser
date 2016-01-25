@@ -34,19 +34,46 @@ has_value 'auxdate' => (
     isa         => 'Date',
     );
 
+has_value 'ws1' => (
+    isa              => 'WS1',
+    required         => 1,
+    reset_on_cleanup => 1,
+    default          => ' ',
+    );
+
 has_value 'state' => (
     isa         => 'TransactionState',
     required    => 1,
     default     => Ledger::Transaction::State::DEFAULT,
     );
 
+has_value 'ws2' => (
+    isa              => 'WS0',
+    required         => 1,
+    reset_on_cleanup => 1,
+    default          => ' ',
+    );
+
 has_value 'code' => (
     isa         => 'Str',
+    );
+
+has_value 'ws3' => (
+    isa              => 'WS0',
+    required         => 1,
+    default          => ' ',
     );
 
 has_value 'description' => (
     isa      => 'Str',
     required => 1,
+    );
+
+has_value 'ws4' => (
+    isa              => 'WS2',
+    required         => 1,
+    reset_on_cleanup => 1,
+    default          => '  ',
     );
 
 has_value 'note' => (
@@ -57,52 +84,24 @@ before 'load_from_reader' => sub {
     my $self = shift;
     my $reader = shift;
 
-    my $line = $reader->pop_line;
-    if ($line !~ m
-	<^([0-9]\S*)                    # 1) actual date
-	(?: = ([0-9]\S*))? (\s+)        # 2) effective date 3) ws
-	(?: ([!*]) (\s*) )?             # 4) state 5) ws
-	(?: \(([^\)]+)\) (\s*))?        # 6) code 7) ws
-	(\S.*?)                         # 8) desc
-	(?: (\s{2,} ;)(.*) )?           # 9) ws 10) note
-	(\R?)\z                         # 11) nl
-	>x) {
-	$reader->give_back_next_line($line);
-	if ($line =~ /^[0-9]/) {
-	    die Ledger::Exception::ParseError->new(
-		'line' => $line,
-		'parser_prefix' => $reader->error_prefix,
-		'message' => "invalid initial transaction line",
-		'abortParsing' => 1,
-		);
-	} else {
-	    die Ledger::Exception::ParseError->new(
-		'line' => $line,
-		'parser_prefix' => $reader->error_prefix,
-		'message' => "not an initial transaction line",
-		);
-	}
-    }
-    my $e;
-    try {
-	$self->date_str($1);
-	$self->auxdate_str($2) if defined($2);
-	$self->state_str($4) if defined($4);
-	$self->code_str($6) if defined($6);
-	$self->description_str($8);
-	$self->note_str($10) if defined($10);
-	$self->_cached_text($line);
-    }
-    catch (Ledger::Exception::ValueParseError $e) {
-	my $msg=$e->message;
-	$reader->give_back_next_line($line);
-	die Ledger::Exception::ParseError->new(
-	    'line' => $line,
-	    'parser_prefix' => $reader->error_prefix,
-	    'message' => "while reading transaction: $msg",
-	    'abortParsing' => 1,
-	    );
-    }
+    $self->load_from_reader_helper(
+	'reader' => $reader,
+	'accept_re' => qr/^[0-9]/,
+	'parse_line_re' => qr<
+	    ^(?<date>[0-9]\S*)
+	    (?: = (?<auxdate>[0-9]\S*))?
+            (?<ws1>\s+)
+	    (?: (?<state>[!*]) (?<ws2>\s*) )?
+	    (?: \((?<code>[^\)]+)\) (?<ws3>\s*))?
+	    (?<description>\S.*?)
+	    (?: (?<ws4>\s{2,}|\t);(?<note>.*) )?
+	                    >x,
+	'accept_error_msg' => "invalid transaction line",
+	'noaccept_error_msg' => "not starting an transaction block",
+	'parse_value_error_msg' => "invalid data in transaction line",
+	'store' => 'all',
+	);
+    return;
 };
 
 sub compute_text {

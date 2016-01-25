@@ -88,11 +88,18 @@ sub buildFormatParam {
     return $name, \@fpar;
 }
 
+sub indent {
+    my $start = shift;
+    my $str = shift;
+    $str =~ s/\n/\n$start/m;
+    return $str;
+}
+
 our (@ISA, @EXPORT_OK, %EXPORT_TAGS);
 BEGIN {
     require Exporter;
     @ISA = qw(Exporter);
-    @EXPORT_OK = qw(format buildFormatParam re_account);
+    @EXPORT_OK = qw(format buildFormatParam re_account indent);
     %EXPORT_TAGS = (
 	'regexp' => ['re_account'],
 	'all' => \@EXPORT_OK,

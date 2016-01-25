@@ -31,19 +31,17 @@ sub load_from_reader {
     my $self = shift;
     my $reader = shift;
 
-    my $line = $reader->pop_line;
-    if ($line !~ /^([;#%|*])(\s*)(.*?)(\R?)\z/) {
-	$reader->give_back_next_line($line);
-	die Ledger::Exception::ParseError->new(
-	    'line' => $line,
-	    'parser_prefix' => $reader->error_prefix,
-	    'message' => "not a comment line",
-	    );
-    }
-    $self->commentchar($1);
-    $self->ws1($2);
-    $self->comment($3);
-    $self->_cached_text($line);
+    $self->load_from_reader_helper(
+	'reader' => $reader,
+	'accept_re' => qr/^[;#%|*]/,
+	'parse_line_re' => qr<
+	     ^(?<commentchar>[;#%|*])
+             (?<ws1>\s*)
+             (?<comment>.*?)
+	                    >x,
+	'noaccept_error_msg' => "not a comment line",
+	'store' => 'all',
+	);
 };
 
 sub compute_text {

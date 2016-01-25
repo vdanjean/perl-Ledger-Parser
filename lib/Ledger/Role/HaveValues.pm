@@ -31,7 +31,7 @@ class_has 'value_names' => (
     isa       => 'ArrayRef[Str]',
     default  => sub {
 	my $self = shift;
-	return _register_value_names($self);
+	return _get_all_value_names($self);
     },
     handles  => {
 	all_value_names       => 'elements',
@@ -49,7 +49,9 @@ class_has 'value_names' => (
     lazy => 1,
     );
 
-sub _register_value_names {
+
+
+sub _get_all_value_names {
     my $class = shift;
     my $info = shift // "constructor";
     my $meta = $class;

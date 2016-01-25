@@ -43,7 +43,7 @@ has_value 'ws1' => (
     );
 
 has_value 'name' => (
-    isa    => 'StrippedStr',
+    isa    => 'AccountName',
     required => 1,
     );
 
@@ -53,46 +53,20 @@ before 'load_from_reader' => sub {
     my $self = shift;
     my $reader = shift;
 
-    my $line = $reader->pop_line;
-    if ($line !~ m
-	<^(account)                     # 1) actual date
-	(\s+)                           # 2) ws
-	($re_account) \s*               # 3) account_name
-	(\R?)\z                         # 4) nl
-	>x) {
-	$reader->give_back_next_line($line);
-	if ($line =~ /^account(\s|(\R?\z))/) {
-	    die Ledger::Exception::ParseError->new(
-		'line' => $line,
-		'parser_prefix' => $reader->error_prefix,
-		'message' => "invalid initial account line (bad account name?)",
-		'abortParsing' => 1,
-		);
-	} else {
-	    die Ledger::Exception::ParseError->new(
-		'line' => $line,
-		'parser_prefix' => $reader->error_prefix,
-		'message' => "not an initial account line",
-		);
-	}
-    }
-    my $e;
-    try {
-	$self->keyword_str($1);
-	$self->ws1_str($2);
-	$self->name_str($3);
-	$self->_cached_text($line);
-    }
-    catch (Ledger::Exception::ValueParseError $e) {
-	my $msg=$e->message;
-	$reader->give_back_next_line($line);
-	die Ledger::Exception::ParseError->new(
-	    'line' => $line,
-	    'parser_prefix' => $reader->error_prefix,
-	    'message' => "while reading account: $msg",
-	    'abortParsing' => 1,
-	    );
-    }
+    $self->load_from_reader_helper(
+	'reader' => $reader,
+	'accept_with_blank_re' => qr/^account/,
+	'parse_line_re' => qr<
+	     ^(?<keyword>account)
+	     (?<ws1>\s+)
+	     (?<name>.*\S)
+	                    >x,
+	'accept_error_msg' => "invalid account line (missing account name?)",
+	'noaccept_error_msg' => "not starting an account block",
+	'parse_value_error_msg' => "invalid data in account line",
+	'store' => 'all',
+	);
+    return;
 };
 
 sub compute_text {

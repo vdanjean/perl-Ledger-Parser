@@ -11,7 +11,7 @@ with (
     );
 
 has_value 'name' => (
-    isa    => 'StrippedStr',
+    isa    => 'AccountName',
     required => 1,
     format_type => 'skip',
 );
@@ -65,7 +65,7 @@ sub parse_str {
 
     $self->die_bad_string(
 	$str,
-	'invalid account syntax')
+	'invalid posting account syntax')
 	unless $str =~ /\A(
             (\[|\()?                     # 2) oparen
 	    ($re_account)                # 3) account
@@ -81,7 +81,7 @@ sub parse_str {
 	    $oparen eq '(' && $cparen eq ')') {
 	$self->die_bad_string(
 	    $str,
-	    "invalid account syntax:".
+	    "invalid posting account syntax:\n".
 	    " parentheses/braces around account don't match");
     }
     if ($oparen eq '') {

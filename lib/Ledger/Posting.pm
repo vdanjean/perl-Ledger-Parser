@@ -69,40 +69,21 @@ before 'load_from_reader' => sub {
     my $self = shift;
     my $reader = shift;
 
-    my $line = $reader->pop_line;
-    if ($line !~ m!
-	^(\s+)                       # 1) ws1
-	(\S.*?)                      # 2) account
-	(?: (\s{2,}|\t)(\S.*?) )?    # 3) ws2 4) amount
-	(?: (\s*) ;(.*?))?           # 5) ws3 6) note
-	(\R?)\z                      # 7) nl
-                      !x) {
-	$reader->give_back_next_line($line);
-	die Ledger::Exception::ParseError->new(
-	    'line' => $line,
-	    'parser_prefix' => $reader->error_prefix,
-	    'message' => "not an initial posting line",
-	    );
-    }
-    my $e;
-    try {
-	$self->ws1_str($1);
-	$self->account_str($2);
-	$self->ws2_str($3) if defined($3);
-	$self->amount_str($4) if defined($4);
-	$self->ws3_str($5) if defined($5);
-	$self->note_str($6) if defined($6);
-	$self->_cached_text($line);
-    }
-    catch (Ledger::Exception::ValueParseError $e) {
-	my $msg=$e->message;
-	$reader->give_back_next_line($line);
-	die Ledger::Exception::ParseError->new(
-	    'line' => $line,
-	    'parser_prefix' => $reader->error_prefix,
-	    'message' => "while reading posting: $msg",
-	    );
-    }
+    $self->load_from_reader_helper(
+	'reader' => $reader,
+	'accept_re' => qr/^\s+[^;]/,
+	'parse_line_re' => qr<
+	    ^(?<ws1>\s+)
+	    (?<account>\S.*?)
+	    (?: (?<ws2>\s{2,}|\t)(?<amount>\S.*?) )?
+	    (?: (?<ws3>\s*) ;(?<note>.*?))?
+	                    >x,
+	'accept_error_msg' => "invalid posting line",
+	'noaccept_error_msg' => "not a posting line",
+	'parse_value_error_msg' => "invalid data in posting line",
+	'store' => 'all',
+	);
+    1;
 };
 
 sub compute_text {

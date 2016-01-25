@@ -27,10 +27,10 @@ has 'config' => (
 
 sub _setupElementKinds {
     return [
-	'Ledger::Journal::Note',
-	'Ledger::Journal::Blank',
-	'Ledger::Account',
 	'Ledger::Transaction',
+	'Ledger::Journal::Blank',
+	'Ledger::Journal::Note',
+	'Ledger::Account',
 	];
 }
 

@@ -20,40 +20,20 @@ has_value 'note' => (
     isa      => 'MetaData',
     );
 
-sub _RE_comment_char {
-    my $self = shift;
-    if ($self->parent->isa('Ledger::Journal')) {
-	return qr@(?:[;#%|*])@;
-    }
-    return qr@(?:;)@;
-}
-
-sub _RE_before_comment {
-    my $self = shift;
-    if ($self->parent->isa('Ledger::Journal')) {
-	return qr@(?:)@;
-    }
-    return qr@(?:\s+)@;
-}
-
 sub load_from_reader {
     my $self = shift;
     my $reader = shift;
 
-    my $line = $reader->pop_line;
-    my $RE_comment_char=$self->_RE_comment_char;
-    my $RE_before_comment=$self->_RE_before_comment;
-    if ($line !~ /^(\s+);(.*?)(\R?)\z/) {
-	$reader->give_back_next_line($line);
-	die Ledger::Exception::ParseError->new(
-	    'line' => $line,
-	    'parser_prefix' => $reader->error_prefix,
-	    'message' => "not a comment line",
-	    );
-    }
-    $self->ws1($1);
-    $self->note($2);
-    $self->_cached_text($line);
+    $self->load_from_reader_helper(
+	'reader' => $reader,
+	'accept_re' => qr/^\s+;/,
+	'parse_line_re' => qr<
+	     ^(?<ws1>\s+);
+             (?<note>.*?)
+	                    >x,
+	'noaccept_error_msg' => "not a comment line",
+	'store' => 'all',
+	);
 };
 
 sub compute_text {
