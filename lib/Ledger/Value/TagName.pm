@@ -12,8 +12,8 @@ around 'value' => sub {
 	unless @_;
 
     my $msg = shift;
-    $msg =~ s/^\s*//;
-    $msg =~ s/\s*$//;
+    $msg =~ s/^\s+//;
+    $msg =~ s/\s+$//;
     if ($msg =~ /\s/) {
 	die Ledger::Exception::ValueParseError->new(
 	    'message' => "Invalid tag name '$msg'",

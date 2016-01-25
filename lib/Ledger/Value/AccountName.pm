@@ -15,8 +15,8 @@ around 'value' => sub {
 	unless @_;
 
     my $msg = shift;
-    $msg =~ s/^\s*//;
-    $msg =~ s/\s*$//;
+    $msg =~ s/^\s+//;
+    $msg =~ s/\s+$//;
     if ($msg !~ /^$re_account$/) {
 	die Ledger::Exception::ValueParseError->new(
 	    'message' => "Invalid account name '$msg'",
