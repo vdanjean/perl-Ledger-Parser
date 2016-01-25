@@ -4,6 +4,7 @@ use Moose::Util::TypeConstraints;
 use namespace::sweep;
 use Math::BigRat;
 use Ledger::Util::ValueAttribute;
+use Ledger::Util qw(:regexp);
 use utf8;
 
 with (
@@ -16,7 +17,7 @@ has_value 'amount' => (
 );
 
 has_value 'commodity' => (
-    isa    => 'StrippedStr',
+    isa    => 'CommodityName',
 );
 
 sub compute_text {
@@ -36,7 +37,7 @@ sub compute_text {
     return $str->[1];
 }
 
-our $re_commodity = qr/[A-Z_]+[A-Za-z_]*|[\$£€¥]/;
+my $re_commodity = re_commodity;
 our $RE_amount = qr/(-?)
                     ($re_commodity)?
                     (\s*) (-?[0-9,]+\.?[0-9]*)

@@ -3,14 +3,19 @@ use strict;
 use warnings;
 use List::Util qw(min);
 use Math::BigRat;
+use utf8;
 
 my $re_account_part = qr/(?:
                               [^\s:\[\(;]+?[ ]??[^\s:\[\(;]*?
                           )+?/x; # don't allow double whitespace nor tabulation
 my $re_account = qr/$re_account_part(?::$re_account_part)*/;
-
 sub re_account {
     return $re_account;
+}
+
+my $re_commodity = qr/[A-Z_]+[A-Za-z_]*|[\$£€¥]/;
+sub re_commodity {
+    return $re_commodity;
 }
 
 sub format {
@@ -99,9 +104,9 @@ our (@ISA, @EXPORT_OK, %EXPORT_TAGS);
 BEGIN {
     require Exporter;
     @ISA = qw(Exporter);
-    @EXPORT_OK = qw(format buildFormatParam re_account indent);
+    @EXPORT_OK = qw(format buildFormatParam re_account re_commodity indent);
     %EXPORT_TAGS = (
-	'regexp' => ['re_account'],
+	'regexp' => ['re_account', 're_commodity'],
 	'all' => \@EXPORT_OK,
 	);
 }

@@ -32,6 +32,7 @@ sub _setupElementKinds {
 	'Ledger::Journal::Note',
 	'Ledger::Account',
 	'Ledger::Journal::Tag',
+	'Ledger::Journal::Commodity',
 	];
 }
 
