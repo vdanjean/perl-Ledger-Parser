@@ -11,10 +11,9 @@ with (
 extends 'Ledger::Journal::Element';
 
 has_value 'keyword' => (
-    isa      => 'StrippedStr',
-    required  => 1,
-    reset_on_cleanup => 1,
-    default          => 'account',
+    isa      => 'Constant',
+    required => 1,
+    default  => 'tag',
     );
 
 has_value 'ws1' => (
