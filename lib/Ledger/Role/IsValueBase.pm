@@ -43,6 +43,7 @@ has 'default_value' => (
     is        => 'ro',
     isa       => 'Str',
     predicate => 'has_default_value',
+    writer    => '_set_default_value',
     );
 
 has 'reset_on_cleanup' => (
@@ -59,6 +60,19 @@ has 'format_type' => (
     lazy      => 1,
     default   => 'string',
     );
+
+sub BUILD {
+    my $self = shift;
+    my $args = shift;
+
+    #print "BUILD for value ",$self->name,"\n";
+    if (exists($args->{'_default_code'})) {
+	my $val=$args->{'_default_code'}->($self);
+	#print "VAL=$val\n";
+	$self->_set_default_value($val);
+	$self->value($val);
+    }
+};
 
 sub reset {
     my $self = shift;

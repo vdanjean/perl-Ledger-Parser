@@ -25,8 +25,12 @@ sub has_value {
 	);
     my %attrhash=();
     if (exists($attr{'default'})) {
-	$buildhash{'value'}=$attr{'default'};
-	$buildhash{'default_value'}=$attr{'default'};
+	if (ref($attr{'default'}) eq 'CODE') {
+	    $buildhash{'_default_code'}=$attr{'default'};
+	} else {
+	    $buildhash{'value'}=$attr{'default'};
+	    $buildhash{'default_value'}=$attr{'default'};
+	}
     }
     if (exists($attr{'format_type'})) {
 	$buildhash{'format_type'}=$attr{'format_type'};
