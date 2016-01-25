@@ -58,3 +58,82 @@ return the number of lines required to print this element
 
 return the number of first line of this element in the Ledger::Journal that own
 this object
+
+=cut
+
+package Ledger::Journal::Element;
+use Moose;
+use namespace::sweep;
+
+extends 'Ledger::Element';
+
+1;
+
+=head1 DESCRIPTION
+
+This object will be the base object for all Element objects that
+can be added into a Ledger::Journal object (more precisely into a object
+with the 'Ledger::Role::HaveJournalElements' role)
+
+=cut
+
+package Ledger::Transaction::Element;
+use Moose;
+use namespace::sweep;
+
+extends 'Ledger::Element';
+
+1;
+
+=head1 DESCRIPTION
+
+This object will be the base object for all Element objects that
+can be added into a Ledger::Transaction object
+
+=cut
+
+package Ledger::Posting::Element;
+use Moose;
+use namespace::sweep;
+
+extends 'Ledger::Element';
+
+1;
+
+=head1 DESCRIPTION
+
+This object will be the base object for all Element objects that
+can be added into a Ledger::Posting object
+
+=cut
+
+package Ledger::Account::Element;
+use Moose;
+use namespace::sweep;
+
+extends 'Ledger::Element';
+
+1;
+
+=head1 DESCRIPTION
+
+This object will be the base object for all Element objects that
+can be added into a Ledger::Account object
+
+=cut
+
+package Ledger::Journal::Tag::Element;
+use Moose;
+use namespace::sweep;
+
+extends 'Ledger::Element';
+
+1;
+
+=head1 DESCRIPTION
+
+This object will be the base object for all Element objects that
+can be added into a Ledger::Journal::Tag object
+
+=cut
+

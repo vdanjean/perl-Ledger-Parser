@@ -1,6 +1,7 @@
 package Ledger::Role::HaveElements;
 use Moose::Role;
 use List::Util qw(sum);
+use Ledger::Element;
 
 with (
     'Ledger::Role::IsParent',
