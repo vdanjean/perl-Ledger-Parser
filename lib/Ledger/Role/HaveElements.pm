@@ -2,7 +2,10 @@ package Ledger::Role::HaveElements;
 use Moose::Role;
 use List::Util qw(sum);
 
-with 'Ledger::Role::IsPrintable';
+with (
+    'Ledger::Role::IsParent',
+    'Ledger::Role::IsPrintable',
+    );
 
 requires 'numlines';
 

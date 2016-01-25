@@ -3,6 +3,10 @@ use Moose::Role;
 use MooseX::ClassAttribute;
 use Ledger::Role::IsValue;
 
+with(
+    'Ledger::Role::IsParent',
+    );
+
 has 'values' => (
     traits    => ['Hash'],
     is        => 'ro',

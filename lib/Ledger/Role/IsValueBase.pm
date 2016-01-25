@@ -4,6 +4,7 @@ use namespace::sweep;
 use Ledger::Exception::Validation;
 
 with (
+    'Ledger::Role::IsParent',
     'Ledger::Role::HaveParent',
     'Ledger::Role::IsPrintable',
     'Ledger::Role::ParseValue',

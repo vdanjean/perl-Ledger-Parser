@@ -1,12 +1,10 @@
 package Ledger::Role::HaveParent;
 use Moose::Role;
-use Ledger::Role::HaveElements;
-use Ledger::Role::HaveValues;
-use Ledger::Role::IsValueBase;
+use Ledger::Role::IsParent;
 
 has 'parent' => (
     is        => 'ro',
-    isa       => 'Ledger::Role::HaveElements|Ledger::Role::HaveValues|Ledger::Role::IsValueBase',
+    isa       => 'Ledger::Role::IsParent',
     required  => 1,
     weak_ref  => 1,
     );
