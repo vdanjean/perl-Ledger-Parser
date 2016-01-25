@@ -61,6 +61,13 @@ has 'format_type' => (
     default   => 'string',
     );
 
+has 'order' => (
+    is        => 'ro',
+    isa       => 'Num',
+    required  => 1,
+    default   => 0,
+    );
+
 sub BUILD {
     my $self = shift;
     my $args = shift;

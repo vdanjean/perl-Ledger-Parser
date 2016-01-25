@@ -35,6 +35,9 @@ sub has_value {
     if (exists($attr{'format_type'})) {
 	$buildhash{'format_type'}=$attr{'format_type'};
     }
+    if (exists($attr{'order'})) {
+	$buildhash{'order'}=$attr{'order'};
+    }
 
     my $role='Ledger::Role::HaveValues';
     if (! $meta->does_role($role)) {

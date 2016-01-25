@@ -50,7 +50,7 @@ class_has 'value_names' => (
     );
 
 
-
+# return an ARRAYREF
 sub _get_all_value_names {
     my $class = shift;
     my $info = shift // "constructor";
@@ -70,6 +70,18 @@ sub _get_all_value_names {
 	}
     }
     return $value_names;
+}
+
+# return a sorted ARRAY
+sub get_all_value_names {
+    my $self = shift;
+    my $names = $self->_get_all_value_names;
+
+    return sort {
+	my $raw_a='_'.$a.'_rawvalue';
+	my $raw_b='_'.$b.'_rawvalue';
+	$self->$raw_a->order <=> $self->$raw_b->order
+    } @{$names};
 }
 
 before 'cleanup' => sub {
