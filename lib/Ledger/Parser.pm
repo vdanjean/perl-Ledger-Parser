@@ -2,7 +2,7 @@ package Ledger::Parser;
 use Moose;
 use namespace::sweep;
 use Ledger::Util::Reader;
-use Ledger::Journal;
+use Ledger::Journals;
 
 with (
     'Ledger::Role::Config',
@@ -21,10 +21,20 @@ has 'validate' => (
     default     => 1,
     );
 
+has 'journals' => (
+    is          => 'ro',
+    isa         => 'Ledger::Journals',
+    default     => sub {
+	my $self = shift;
+	Ledger::Journals->new('config' => $self);
+    },
+    lazy       => 1,
+    required   => 1,
+    );
+
 sub read_file {
     my ($self, $filename) = @_;
-    my $journal=Ledger::Journal->new(
-	'config' => $self,
+    my $journal=$self->journals->add_journal(
 	'reader' => Ledger::Util::Reader->new(
 	    'file' => $filename,
 	),
@@ -35,7 +45,7 @@ sub read_file {
 
 sub read_string {
     my ($self, $str) = @_;
-    my $journal=Ledger::Journal->new(
+    my $journal=$self->journals->add_journal(
 	'config' => $self,
 	'reader' => Ledger::Util::Reader(
 	    'string' => $str,

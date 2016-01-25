@@ -21,10 +21,24 @@ has 'filename' => (
 
 has 'parent' => (
     is       => 'ro',
-    isa      => 'Maybe[LedgerStr]',
+    isa      => 'Ledger::Util::Reader',
     writer   => '_set_parent',
     predicate => 'has_parent',
     clearer  => '_unset_parent',
+    );
+
+has 'cwd' => (
+    is       => 'ro',
+    isa      => 'Path::Class::Dir',
+    writer   => '_set_cwd',
+    );
+
+has 'file' => (
+    is       => 'ro',
+    isa      => 'Path::Class::File',
+    predicate=> 'is_file',
+    writer   => '_set_file',
+    init_arg => undef,
     );
 
 sub id {
@@ -114,9 +128,10 @@ has '_fh' => (
     isa      => 'FileHandle',
     );
 
-has '_type' => (
-    is       => 'rw',
+has 'type' => (
+    is       => 'ro',
     isa      => 'Str',
+    writer   => '_type',
     );
 
 sub pop_line {
@@ -153,6 +168,11 @@ around BUILDARGS => sub {
     } else {
 	%hash=(@_);
     }
+    if (! $class->meta->isa("Moose::Meta::Class")) {
+	print "Adding parent\n";
+	$hash{'parent'} //= $class;
+    }
+    print $class, "\n";
     if (exists($hash{'file'})) {
 	$hash{'file'} = Path::Class::File->new($hash{'file'});
     }
@@ -163,21 +183,40 @@ sub BUILD {
     my $self = shift;
     my $args = shift;
 
+    if ($self->has_parent) {
+	print "Have parent\n";
+	$self->_set_cwd($self->parent->cwd);
+    } else {
+	print "Have no parent\n";
+	$self->_set_cwd(Path::Class::Dir->new('.')->cleanup);
+    }
     if (exists($args->{'file'})) {
-	my $filename=$args->{'file'};
-	open my $fh, "<", $filename
-	    or $self->_error("can't open file '$filename': $!\n");
+	my $file=$args->{'file'};
+	print "file: $file cwd: ",$self->cwd."", "\n" ;
+	$self->_set_filename($file->stringify);
+	if ($file->is_relative) {
+	    $self->_set_cwd(Path::Class::Dir->new($self->cwd, $file->dir)->cleanup);
+	    $file = Path::Class::File->new($self->cwd, $file->basename)->cleanup;
+	} else {
+	    $self->_set_cwd($file->dir->cleanup);
+	}
+	my $filename=$args->{'file'}->stringify;
+	my $fh = $file->openr();
 	binmode($fh, ":utf8");
 	$self->_fh($fh);
 	$self->_set_lineno(0);
-	$self->_set_filename("$filename");
 	$self->_type('file');
+	$self->_set_file($file->resolve);
     } elsif (exists($args->{'string'})) {
 	my $content=$args->{'string'};
 	open my $fh, "<", \$content;
 	binmode($fh, ":utf8");
 	$self->_fh($fh);
+	$self->_set_lineno(0);
+	$self->_set_filename("<>");
 	$self->_type('string');
+    } else {
+	die "nothing to read!";
     }
     $self->_set_lineno($args->{'lineno'} - 1) if exists $args->{'lineno'};
     $self->_set_filename($args->{'filename'}) if exists $args->{'filename'};

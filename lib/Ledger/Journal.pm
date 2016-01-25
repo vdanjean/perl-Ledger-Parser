@@ -6,6 +6,7 @@ use namespace::sweep;
 # VERSION
 
 with (
+    'Ledger::Role::HaveParent',
     'Ledger::Role::HaveReadableElementsList',
     'Ledger::Role::HaveJournalElements' => {
 	-alias => {
@@ -19,17 +20,50 @@ has '+elements' => (
     isa      => 'ArrayRef[Ledger::Journal::Element]',
     );
 
-has 'config' => (
-    is         => 'rw',
-    does       => 'Ledger::Role::Config',
-    required   => 1,
+has 'file' => (
+    is        => 'ro',
+    isa       => 'Path::Class::File',
+    predicate => 'is_file',
     );
+
+has 'parseErrors' => (
+    traits    => ['Array'],
+    is        => 'ro',
+    isa       => 'ArrayRef[Ledger::Exception::ParseError]',
+    default   => sub { [] },
+    lazy      => 1,
+    handles  => {
+        allParseErrors   => 'elements',
+	addParseError    => 'push',
+	parsingOK        => 'is_empty',
+    },
+    );
+
+before 'addParseError' => sub {
+    my $self = shift;
+
+    my $die_on_error = $self->config->die_on_first_error//0;
+    my $display = $self->config->display_errors//1;
+
+    if ($display) {
+	binmode(STDERR, ":utf8");
+    }
+    foreach my $err (@_) {
+	if ($display) {
+	    print STDERR $err->parser_prefix, $err->message, "\n";
+	}
+	if ($die_on_error) {
+	    die $err->parser_prefix.$err->message."\n";
+	}
+    }
+};
 
 sub _setupElementKinds {
     return [
 	'Ledger::Transaction',
 	'Ledger::Journal::Blank',
 	'Ledger::Journal::Note',
+	'Ledger::Journal::Include',
 	'Ledger::Account',
 	'Ledger::Journal::Tag',
 	'Ledger::Journal::Commodity',
@@ -45,6 +79,12 @@ sub as_string {
     my $self = shift;
     $self->validate;
     return $self->_as_string;
+}
+
+sub _value_updated {
+    my $self = shift;
+    # TODO: mark journal as dirty
+    # ... and cleanup in as_string ?
 }
 
 sub journal {

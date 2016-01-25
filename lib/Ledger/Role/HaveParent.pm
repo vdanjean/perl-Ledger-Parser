@@ -14,9 +14,14 @@ sub journal {
     return $self->parent->journal;
 }
 
+sub journals {
+    my $self = shift;
+    return $self->parent->journals;
+}
+
 sub config {
     my $self = shift;
-    return $self->journal->config;
+    return $self->journals->config;
 }
 
 sub _value_updated {

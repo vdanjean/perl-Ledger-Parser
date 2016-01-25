@@ -40,5 +40,26 @@ has 'amount_format' => (
     default     => '@{amount:%10.2f:%10s:%7d   }@{commodity: %-3s}',
     );
 
+has 'die_on_first_error' => (
+    is          => 'rw',
+    isa         => 'Bool',
+    default     => 0,
+    lazy        => 1,
+    );
+
+has 'die_if_parsing_error' => (
+    is          => 'rw',
+    isa         => 'Bool',
+    default     => 1,
+    lazy        => 1,
+    );
+
+has 'display_errors' => (
+    is          => 'rw',
+    isa         => 'Bool',
+    default     => 1,
+    lazy        => 1,
+    );
+
 1;
 

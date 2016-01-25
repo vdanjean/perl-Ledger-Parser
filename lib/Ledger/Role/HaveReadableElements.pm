@@ -8,8 +8,6 @@ with ('Ledger::Role::Readable');
 
 requires '_readEnded';
 
-binmode(STDERR, ":utf8");
-
 sub load_from_reader {
     my $self = shift;
     my $reader = shift;
@@ -49,17 +47,29 @@ sub load_from_reader {
 	    next LINE if defined($elem);
 	}
 	if ($aborted) {
-	    print STDERR $errors[0]->parser_prefix."error: ".
-		indent(' ', $errors[0]->message)."\n";
+	    $self->journal->addParseError(
+		Ledger::Exception::ParseError->new(
+		    'parser_prefix' => $errors[0]->parser_prefix,
+		    'line' => $errors[0]->line,
+		    'message' => ("error: ".
+				  indent(' ', $errors[0]->message)),
+		)
+		);
 	} else {
 	    $reader->pop_line;
-	    print STDERR $errors[0]->parser_prefix.
-		"error: invalid line while reading ".$self->meta->name.":\n ".
-		$errors[0]->line.
-		" * ".join("\n * ",
-			  (map {
-			      indent('   ', $_->message)
-			   } @errors))."\n";
+	    $self->journal->addParseError(
+		Ledger::Exception::ParseError->new(
+		    'parser_prefix' => $errors[0]->parser_prefix,
+		    'line' => $errors[0]->line,
+		    'message' => ("error: invalid line while reading ".
+				  $self->meta->name.":\n ".
+				  $errors[0]->line.
+				  " * ".join("\n * ",
+					     (map {
+						 indent('   ', $_->message)
+					      } @errors))),
+		    ),
+		);
 	}
     }
     #print "Parsing done in ".$self->meta->name."\n";
