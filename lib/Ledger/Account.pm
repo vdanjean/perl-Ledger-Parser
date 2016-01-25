@@ -18,7 +18,7 @@ has '+elements' => (
 sub _setupElementKinds {
     return [
 	#'Ledger::Account::Note',
-	#'Ledger::Account::Alias',
+	'Ledger::Account::Alias',
 	#'Ledger::Account::Payee',
 	#'Ledger::Account::Check',
 	#'Ledger::Account::Assert',
