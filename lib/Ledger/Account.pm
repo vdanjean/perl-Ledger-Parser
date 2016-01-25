@@ -20,7 +20,7 @@ sub _setupElementKinds {
 	'Ledger::Account::Note',
 	'Ledger::Account::Alias',
 	#'Ledger::Account::Payee',
-	#'Ledger::Account::Check',
+	'Ledger::Account::Check',
 	'Ledger::Account::Assert',
 	#'Ledger::Account::Eval',
 	#'Ledger::Account::Print',
