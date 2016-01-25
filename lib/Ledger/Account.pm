@@ -21,7 +21,7 @@ sub _setupElementKinds {
 	'Ledger::Account::Alias',
 	#'Ledger::Account::Payee',
 	#'Ledger::Account::Check',
-	#'Ledger::Account::Assert',
+	'Ledger::Account::Assert',
 	#'Ledger::Account::Eval',
 	#'Ledger::Account::Print',
 	#'Ledger::Account::Default',
