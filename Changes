@@ -1,5 +1,9 @@
 Revision history for Ledger-Parser.
 
+0.90    2016-01-25 (VDANJEAN)
+
+	- New implementation nearly complete
+
 0.06    2016-01-11 (VDANJEAN)
 
         [INCOMPATIBLE CHANGES]
