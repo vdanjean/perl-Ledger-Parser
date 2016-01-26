@@ -168,11 +168,11 @@ around BUILDARGS => sub {
     } else {
 	%hash=(@_);
     }
-    if (! $class->meta->isa("Moose::Meta::Class")) {
-	print "Adding parent\n";
-	$hash{'parent'} //= $class;
-    }
-    print $class, "\n";
+    #if (! $class->meta->isa("Moose::Meta::Class")) {
+    #	print "Adding parent\n";
+    #	$hash{'parent'} //= $class;
+    #}
+    #print $class, "\n";
     if (exists($hash{'file'})) {
 	$hash{'file'} = Path::Class::File->new($hash{'file'});
     }
@@ -184,15 +184,15 @@ sub BUILD {
     my $args = shift;
 
     if ($self->has_parent) {
-	print "Have parent\n";
+	#print "Have parent\n";
 	$self->_set_cwd($self->parent->cwd);
     } else {
-	print "Have no parent\n";
+	#print "Have no parent\n";
 	$self->_set_cwd(Path::Class::Dir->new('.')->cleanup);
     }
     if (exists($args->{'file'})) {
 	my $file=$args->{'file'};
-	print "file: $file cwd: ",$self->cwd."", "\n" ;
+	#print "file: $file cwd: ",$self->cwd."", "\n" ;
 	$self->_set_filename($file->stringify);
 	if ($file->is_relative) {
 	    $self->_set_cwd(Path::Class::Dir->new($self->cwd, $file->dir)->cleanup);
