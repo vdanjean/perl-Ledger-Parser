@@ -68,6 +68,7 @@ sub _setupElementKinds {
 	'Ledger::Account',
 	'Ledger::Journal::Tag',
 	'Ledger::Journal::Commodity',
+	'Ledger::Journal::Bucket',
 	'Ledger::Journal::Python',
 	];
 }
