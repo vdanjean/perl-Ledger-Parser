@@ -10,18 +10,11 @@ with (
     'Ledger::Role::IsSubValue',
     );
 
-has_value 'ws1' => (
-    isa              => 'WS0',
-    required         => 1,
-    reset_on_cleanup => 1,
-    default          => ' ',
-);
-
 has_value 'name' => (
     isa    => 'TagName',
 );
 
-has_value 'ws2' => (
+has_value 'ws1' => (
     isa              => 'WS1',
     required         => 1,
     reset_on_cleanup => 1,
@@ -37,10 +30,10 @@ sub compute_text {
     my $self = shift;
     my $value=$self->value_str;
     if ($value ne '') {
-	$value = $self->ws2_str.$value;
+	$value = $self->ws1_str.$value;
     }
     
-    return $self->ws1_str.$self->name_str.":".$value;
+    return $self->name_str.":".$value;
 }
 
 sub parse_str {
@@ -50,16 +43,14 @@ sub parse_str {
 	$str,
 	'invalid Valued Tag syntax')
 	unless $str =~ /\A(
-            (\s*)                        # 2) ws1
-            (\S+):                       # 3) tag name
-            (?:(\s+)                     # 4) ws2
-	    (.*))?                       # 5) tag value
+            (\S+):                       # 2) tag name
+            (?:(\s+)                     # 3) ws1
+	    (.*))?                       # 4) tag value
             )\z/x;
 
-    $self->ws1_str($2);
-    $self->name_str($3);
-    $self->ws2_str($4) if defined($4);
-    $self->value_str($5) if defined($5);
+    $self->name_str($2);
+    $self->ws1_str($3) if defined($3);
+    $self->value_str($4) if defined($4);
 }
 
 1;

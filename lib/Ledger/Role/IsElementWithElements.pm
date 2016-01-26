@@ -20,7 +20,7 @@ sub _readEnded {
     my $reader = shift;
     my $line = $reader->next_line;
 
-    return ($line !~ /\S/ || $line =~ /^\S/);
+    return (!defined($line) || $line !~ /\S/ || $line =~ /^\S/);
 }
 
 sub as_string {

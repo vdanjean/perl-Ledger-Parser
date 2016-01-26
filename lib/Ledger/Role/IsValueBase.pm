@@ -85,7 +85,7 @@ sub BUILD {
 sub reset {
     my $self = shift;
 
-    if ($self->has_default_value && $self->required) {
+    if ($self->has_default_value) {
 	$self->value_str($self->default_value);
     } else {
 	$self->_reset(@_);

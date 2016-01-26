@@ -22,7 +22,6 @@ sub load_from_reader {
 	@errors=();
 	#print "Trying all kinds in ".$self->meta->name."\n";
 	#print "Trying all kinds in ".$self->meta->name." for ".$reader->next_line;
-	last LINE if not defined($reader->next_line);
 	last LINE if $self->_readEnded($reader);
 	$aborted=0;
 	while (my $kind=shift @elementKinds) {

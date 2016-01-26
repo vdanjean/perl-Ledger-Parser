@@ -64,6 +64,7 @@ sub _setupElementKinds {
 	'Ledger::Journal::Blank',
 	'Ledger::Journal::Note',
 	'Ledger::Journal::Include',
+	'Ledger::Journal::ApplyTag',
 	'Ledger::Account',
 	'Ledger::Journal::Tag',
 	'Ledger::Journal::Commodity',
@@ -72,7 +73,11 @@ sub _setupElementKinds {
 }
 
 sub _readEnded {
-    return 0;
+    my $self = shift;
+    my $reader = shift;
+    my $line = $reader->next_line;
+
+    return ! defined($line);
 }
 
 sub as_string {

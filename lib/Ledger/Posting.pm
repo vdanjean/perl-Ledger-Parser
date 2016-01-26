@@ -62,7 +62,7 @@ sub _readEnded {
     my $reader = shift;
     my $line = $reader->next_line;
 
-    return ($line !~ /^\s+;/);
+    return (!defined($line) || $line !~ /^\s+;/);
 }
 
 before 'load_from_reader' => sub {

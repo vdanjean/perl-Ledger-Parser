@@ -16,6 +16,13 @@ has_value 'ws1' => (
     reset_on_cleanup => 1,    
     );
 
+has_value 'ws2' => (
+    isa      => 'WS0',
+    required => 1,
+    default  => ' ',
+    reset_on_cleanup => 1,
+    );
+
 has_value 'note' => (
     isa      => 'MetaData',
     );
@@ -29,6 +36,7 @@ sub load_from_reader {
 	'accept_re' => qr/^\s+;/,
 	'parse_line_re' => qr<
 	     ^(?<ws1>\s+);
+             (?<ws2>\s*)
              (?<note>.*?)
 	                    >x,
 	'noaccept_error_msg' => "not a comment line",
@@ -38,7 +46,7 @@ sub load_from_reader {
 
 sub compute_text {
     my $self = shift;
-    return $self->ws1_str.';'.$self->note_str."\n";
+    return $self->ws1_str.';'.$self->ws2_str.$self->note_str."\n";
 }
 
 1;

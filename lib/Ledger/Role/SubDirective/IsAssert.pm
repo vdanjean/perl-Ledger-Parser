@@ -1,4 +1,4 @@
-package Ledger::Role::SubDirective::IsCheck;
+package Ledger::Role::SubDirective::IsAssert;
 use Moose::Role;
 use namespace::sweep;
 use Ledger::Util::ValueAttribute;

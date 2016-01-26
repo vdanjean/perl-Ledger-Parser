@@ -10,21 +10,14 @@ with (
     'Ledger::Role::IsSubValue',
     );
 
-has_value 'ws1' => (
-    isa              => 'WS0',
-    required         => 1,
-    reset_on_cleanup => 1,
-    default          => ' ',
-);
-
 has_value 'comment' => (
-    isa    => 'EndStrippedStr',
+    isa    => 'StrippedStr',
 );
 
 sub compute_text {
     my $self = shift;
     
-    return $self->ws1.$self->comment;
+    return $self->comment;
 }
 
 sub parse_str {
@@ -34,12 +27,10 @@ sub parse_str {
 	$str,
 	'invalid comment syntax!!! (internal error)')
 	unless $str =~ /\A(
-            (\s*)                        # 2) ws1
-            (.*)                         # 3) comment
+            (.*)                         # 2) comment
             )\z/x;
 
-    $self->ws1_str($2);
-    $self->comment($3);
+    $self->comment($2);
 }
 
 1;
