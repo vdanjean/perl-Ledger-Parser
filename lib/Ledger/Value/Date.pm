@@ -69,7 +69,7 @@ sub _parse_date {
 	}
     }
     catch {
-	die_bad_string(
+	$self->die_bad_string(
 	    $str,
 	    'invalid date syntax for '.
 	    $self->config->input_date_format.' format');

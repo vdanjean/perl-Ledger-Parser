@@ -79,7 +79,7 @@ sub load_from_reader_helper {
 	    }
 	}
 	# after as any call to XXX_str(...) reset the cached text
-	if ( ! ($options{'cache_line'} // 1)) {
+	if ($options{'cache_line'} // 1) {
 	    $self->_cached_text($line);
 	}
 
