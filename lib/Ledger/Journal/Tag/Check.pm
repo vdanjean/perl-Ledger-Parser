@@ -1,8 +1,8 @@
-package Ledger::Account::Check;
+package Ledger::Journal::Tag::Check;
 use Moose;
 use namespace::sweep;
 
-extends 'Ledger::Account::Element';
+extends 'Ledger::Journal::Tag::Element';
 
 with (
     'Ledger::Role::SubDirective::IsCheck',

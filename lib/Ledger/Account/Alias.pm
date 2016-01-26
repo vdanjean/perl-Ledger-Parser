@@ -12,7 +12,7 @@ sub end_parse_line_re {
 }
 
 with (
-    'Ledger::Role::IsSimpleSubElement',
+    'Ledger::Role::SubDirective::Simple',
     );
 
 extends 'Ledger::Account::Element';

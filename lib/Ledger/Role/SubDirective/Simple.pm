@@ -1,11 +1,11 @@
-package Ledger::Role::IsSimpleSubElement;
+package Ledger::Role::SubDirective::Simple;
 use Moose::Role;
 use namespace::sweep;
 
 requires 'end_parse_line_re';
 
 with (
-    'Ledger::Role::IsSubElement',
+    'Ledger::Role::SubDirective::Base',
     );
 
 sub load_from_reader {
@@ -15,7 +15,7 @@ sub load_from_reader {
     my $end_parse_line_re = $self->end_parse_line_re;
     my $keyword_re = $self->keyword_name;
     $keyword_re = qr/$keyword_re/;
-    
+
     $self->load_from_reader_helper(
 	'reader' => $reader,
 	'accept_with_blank_re' => qr/^\s+$keyword_re/,

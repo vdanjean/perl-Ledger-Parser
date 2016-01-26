@@ -3,12 +3,22 @@ use Moose;
 use namespace::sweep;
 use Ledger::Util::ValueAttribute;
 
+extends 'Ledger::Journal::Element';
+
 with (
-    'Ledger::Role::HaveCachedText',
-    'Ledger::Role::Readable',
+    'Ledger::Role::IsElementWithElements',
     );
 
-extends 'Ledger::Journal::Element';
+has '+elements' => (
+    isa      => 'ArrayRef[Ledger::Journal::Tag::Element]',
+    );
+
+sub _setupElementKinds {
+    return [
+	'Ledger::Journal::Tag::Check',
+	'Ledger::Journal::Tag::Assert',
+	];
+}
 
 has_value 'keyword' => (
     isa      => 'Constant',
@@ -28,7 +38,7 @@ has_value 'name' => (
     required => 1,
     );
 
-sub load_from_reader {
+before 'load_from_reader' => sub {
     my $self = shift;
     my $reader = shift;
 

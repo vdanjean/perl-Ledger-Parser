@@ -1,4 +1,4 @@
-package Ledger::Role::IsSubElement;
+package Ledger::Role::SubDirective::Base;
 use Moose::Role;
 use namespace::sweep;
 use Ledger::Util::ValueAttribute;

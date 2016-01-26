@@ -1,24 +1,21 @@
-package Ledger::Account::Note;
-use Moose;
+package Ledger::Role::SubDirective::IsCheck;
+use Moose::Role;
 use namespace::sweep;
 use Ledger::Util::ValueAttribute;
-use Ledger::Util qw(:regexp);
 
 sub keyword_name {
-    return 'note';
+    return 'check';
 }
 
 sub end_parse_line_re {
-    return qr/(?<note>.*?)/;
+    return qr/(?<check>.*?)/;
 }
 
 with (
     'Ledger::Role::SubDirective::Simple',
     );
 
-extends 'Ledger::Account::Element';
-
-has_value 'note' => (
+has_value 'check' => (
     isa      => 'StrippedStr',
     );
 
