@@ -1,5 +1,6 @@
 package Ledger::Role::HaveReadableElementsFromParent;
 use Moose::Role;
+use namespace::sweep;
 
 with (
     'Ledger::Role::HaveParent',

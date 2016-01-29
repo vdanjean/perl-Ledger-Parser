@@ -1,5 +1,6 @@
 package Ledger::Role::HaveElements;
 use Moose::Role;
+use namespace::sweep;
 use List::Util qw(sum);
 use Ledger::Element;
 
@@ -18,6 +19,7 @@ has 'elements' => (
     required => 1,
     handles  => {
 	all_elements   => 'elements',
+	_iterable_elements   => 'elements',
 	_add_element   => 'push',
 	_map_elements   => 'map',
 	_filter_elements=> 'grep',

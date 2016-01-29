@@ -1,5 +1,6 @@
 package Ledger::Role::HaveParent;
 use Moose::Role;
+use namespace::sweep;
 use Ledger::Role::IsParent;
 
 has 'parent' => (

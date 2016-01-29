@@ -1,5 +1,6 @@
 package Ledger::Role::Readable;
 use Moose::Role;
+use namespace::sweep;
 use TryCatch;
 use Ledger::Util qw(indent);
 

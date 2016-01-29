@@ -1,5 +1,6 @@
 package Ledger::Role::HaveValues;
 use Moose::Role;
+use namespace::sweep;
 use MooseX::ClassAttribute;
 use Ledger::Role::IsValue;
 
