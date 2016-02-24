@@ -27,7 +27,7 @@ sub startlinenum {
     my $self = shift;
 
     my $numline=$self->parent->startnumline;
-    $numline+=1; # TODO Assume only 1 own line for HaveElements objects
+    $numline+=1 if $self->parent->isa('Ledger::Element');
 
     for my $e ($self->parent->all_elements) {
 	return $numline if $e == $self;

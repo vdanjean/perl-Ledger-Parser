@@ -6,7 +6,7 @@ use Ledger::Util::ValueAttribute;
 extends 'Ledger::Journal::Element';
 
 with (
-    'Ledger::Role::IsElementWithElements',
+    'Ledger::Role::Element::Layout::MultiLines::List',
     );
 
 has '+elements' => (
@@ -20,25 +20,16 @@ sub _setupElementKinds {
 	];
 }
 
-has_value 'keyword' => (
-    isa      => 'Constant',
-    required => 1,
-    default  => 'tag',
-    );
+has_value_directive 'tag';
 
-has_value 'ws1' => (
-    isa      => 'WS1',
-    required  => 1,
-    reset_on_cleanup => 1,
-    default          => ' ',
-    );
+has_value_separator_simple 'ws1';
 
 has_value 'name' => (
     isa    => 'TagName',
     required => 1,
     );
 
-before 'load_from_reader' => sub {
+sub load_values_from_reader {
     my $self = shift;
     my $reader = shift;
 
@@ -46,7 +37,7 @@ before 'load_from_reader' => sub {
 	'reader' => $reader,
 	'accept_with_blank_re' => qr/^tag/,
 	'parse_line_re' => qr<
-	     ^(?<keyword>tag)
+	     ^(?<directive>tag)
 	     (?<ws1>\s+)
 	     (?<name>.*\S)
 	                    >x,
@@ -55,11 +46,32 @@ before 'load_from_reader' => sub {
 	'parse_value_error_msg' => "invalid data in tag declaration",
 	'store' => 'all',
 	);
-};
-
-sub compute_text {
-    my $self = shift;
-    return $self->keyword_str.$self->ws1_str.$self->name_str."\n";
 }
+
+1;
+
+######################################################################
+package Ledger::Journal::Tag::Assert;
+use Moose;
+use namespace::sweep;
+
+extends 'Ledger::Journal::Tag::Element';
+
+with (
+    'Ledger::Role::Element::SubDirective::IsAssert',
+    );
+
+1;
+
+######################################################################
+package Ledger::Journal::Tag::Check;
+use Moose;
+use namespace::sweep;
+
+extends 'Ledger::Journal::Tag::Element';
+
+with (
+    'Ledger::Role::Element::SubDirective::IsCheck',
+    );
 
 1;

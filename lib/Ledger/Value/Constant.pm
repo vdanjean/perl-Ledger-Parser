@@ -14,6 +14,7 @@ around 'value' => sub {
     my $msg = shift;
     $msg =~ s/^\s+//;
     $msg =~ s/\s+$//;
+    $msg =~ s/\s+/ /g;
     if ($msg ne $self->default_value) {
 	die Ledger::Exception::ValueParseError->new(
 	    'message' => "Invalid value '$msg' for constant '".$self->default_value."'",

@@ -8,7 +8,7 @@ use TryCatch;
 extends 'Ledger::Journal::Element';
 
 with (
-    'Ledger::Role::IsElementWithElements',
+    'Ledger::Role::Element::Layout::MultiLines::List',
     );
 
 has '+elements' => (
@@ -28,19 +28,9 @@ sub _setupElementKinds {
 	];
 }
 
-has_value 'keyword' => (
-    isa      => 'StrippedStr',
-    required  => 1,
-    reset_on_cleanup => 1,
-    default          => 'account',
-    );
+has_value_directive 'account';
 
-has_value 'ws1' => (
-    isa      => 'WS1',
-    required  => 1,
-    reset_on_cleanup => 1,
-    default          => ' ',
-    );
+has_value_separator_simple 'ws1';
 
 has_value 'name' => (
     isa    => 'AccountName',
@@ -49,7 +39,7 @@ has_value 'name' => (
 
 my $re_account=re_account;
 
-before 'load_from_reader' => sub {
+sub load_values_from_reader {
     my $self = shift;
     my $reader = shift;
 
@@ -57,7 +47,7 @@ before 'load_from_reader' => sub {
 	'reader' => $reader,
 	'accept_with_blank_re' => qr/^account/,
 	'parse_line_re' => qr<
-	     ^(?<keyword>account)
+	     ^(?<directive>account)
 	     (?<ws1>\s+)
 	     (?<name>.*\S)
 	                    >x,
@@ -69,12 +59,6 @@ before 'load_from_reader' => sub {
     return;
 };
 
-sub compute_text {
-    my $self = shift;
-
-    return $self->keyword_str.$self->ws1_str.$self->name_str."\n";
-}
-
 #use 
 override 'validate' => sub {
     my $self = shift;
@@ -83,5 +67,83 @@ override 'validate' => sub {
 
     # TODO: check number of sublines for each types
 };
+
+1;
+
+######################################################################
+package Ledger::Account::Alias;
+use Moose;
+use namespace::sweep;
+use Ledger::Util::ValueAttribute;
+
+sub subdirective_name {
+    return 'alias';
+}
+
+sub end_parse_line_re {
+    return qr/(?<name>.*\S)/;
+}
+
+with (
+    'Ledger::Role::Element::SubDirective::Simple',
+    );
+
+extends 'Ledger::Account::Element';
+
+has_value 'name' => (
+    isa      => 'AccountName',
+    );
+
+1;
+
+######################################################################
+package Ledger::Account::Assert;
+use Moose;
+use namespace::sweep;
+
+extends 'Ledger::Account::Element';
+
+with (
+    'Ledger::Role::Element::SubDirective::IsAssert',
+    );
+
+1;
+
+######################################################################
+package Ledger::Account::Check;
+use Moose;
+use namespace::sweep;
+
+extends 'Ledger::Account::Element';
+
+with (
+    'Ledger::Role::Element::SubDirective::IsCheck',
+    );
+
+1;
+
+######################################################################
+package Ledger::Account::Note;
+use Moose;
+use namespace::sweep;
+use Ledger::Util::ValueAttribute;
+
+sub subdirective_name {
+    return 'note';
+}
+
+sub end_parse_line_re {
+    return qr/(?<note>.*?)/;
+}
+
+with (
+    'Ledger::Role::Element::SubDirective::Simple',
+    );
+
+extends 'Ledger::Account::Element';
+
+has_value 'note' => (
+    isa      => 'StrippedStr',
+    );
 
 1;

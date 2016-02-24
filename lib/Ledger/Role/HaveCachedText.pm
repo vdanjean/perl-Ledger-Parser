@@ -13,12 +13,17 @@ has '_cached_text' => (
     predicate => '_text_cached',
     );
 
-sub as_string {
+sub gettext {
     my $self = shift;
     if (!$self->_text_cached) {
 	$self->_cached_text($self->compute_text);
     }
     return $self->_cached_text;
+}
+
+sub as_string {
+    my $self = shift;
+    return $self->gettext(@_);
 }
 
 before 'cleanup' => sub {

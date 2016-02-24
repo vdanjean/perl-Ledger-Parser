@@ -3,31 +3,42 @@ use Moose;
 use namespace::sweep;
 use Ledger::Util::ValueAttribute;
 
-with (
-    'Ledger::Role::HaveCachedText',
-    'Ledger::Role::Readable',
-    );
-
 extends 'Ledger::Journal::Element';
 
-has_value 'keyword' => (
-    isa      => 'Constant',
-    default  => 'include',
+with (
+    'Ledger::Role::Element::Layout::OneLine',
     );
 
-has_value 'ws1' => (
-    isa      => 'WS1',
-    required  => 1,
-    reset_on_cleanup => 1,
-    default          => ' ',
-    );
+has_value_directive 'include';
+
+has_value_separator_simple 'ws1';
 
 has_value 'file' => (
     isa      => 'File',
     required => 1,
     );
 
-sub load_from_reader {
+has 'incJournal' => (
+    isa       => 'Ledger::Journal',
+    is        => 'ro',
+    writer    => '_setIncJournal',
+    predicate => 'loaded',
+    );
+
+sub _loadIncJournal {
+    my $self = shift;
+    my $reader = shift;
+    if (! $self->loaded) {
+	$self->_setIncJournal(
+	    $self->journals->add_journal(
+		'reader' => $reader->newSubReader(
+		    'file' => $self->file,
+		),
+	    ));
+    }
+}
+
+sub load_values_from_reader {
     my $self = shift;
     my $reader = shift;
 
@@ -35,7 +46,7 @@ sub load_from_reader {
 	'reader' => $reader,
 	'accept_with_blank_re' => qr/^include/,
 	'parse_line_re' => qr<
-	     ^(?<keyword>include)
+	     ^(?<directive>include)
 	     (?<ws1>\s+)
 	     (?<file>.*\S)             
 	                    >x,
@@ -44,16 +55,7 @@ sub load_from_reader {
 	'store' => 'all',
 	);
 
-    $self->journals->add_journal(
-	'reader' => $reader->newSubReader(
-	    'file' => $self->file,
-	),
-	);
+    $self->_loadIncJournal($reader);
 };
-
-sub compute_text {
-    my $self = shift;
-    return $self->keyword_str.$self->ws1_str.$self->file_str."\n";
-}
 
 1;

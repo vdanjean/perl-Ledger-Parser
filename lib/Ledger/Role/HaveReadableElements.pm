@@ -20,8 +20,7 @@ sub load_from_reader {
     for(;;) {
 	@elementKinds = $self->_listElementKinds;
 	@errors=();
-	#print "Trying all kinds in ".$self->meta->name."\n";
-	#print "Trying all kinds in ".$self->meta->name." for ".$reader->next_line;
+	#print "Trying all kinds in ".$self->meta->name." for ".($reader->next_line // '');
 	last LINE if $self->_readEnded($reader);
 	$aborted=0;
 	while (my $kind=shift @elementKinds) {

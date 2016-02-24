@@ -14,6 +14,7 @@ class_has '_elementKinds' => (
     builder  => '_setupAndRegisterElementKinds',
     handles  => {
 	_registerElementKind   => 'push',
+	_listElementKindsOrig  => 'elements',
 	_listElementKinds      => 'elements',
 	_elementKindsRegistrationRequired  => 'is_empty',
     },

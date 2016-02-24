@@ -6,11 +6,17 @@ use Ledger::Role::HaveValues;
 #use Moose::Util qw/find_meta does_role apply_all_roles/;;
 
 Moose::Exporter->setup_import_methods(
-    with_meta => [ 'has_value' ],
+    with_meta => [ 'has_value', 
+		   'has_value_constant',
+		   'has_value_directive',
+		   'has_value_separator_simple',
+		   'has_value_indented_line',
+    ],
     #also      => 'Moose',
     );
 
 use UNIVERSAL::require;
+my $default_auto_order=1000;
 sub has_value {
     #print "'", join("', '",@_), "'\n";
     my ( $meta, $name, %attr ) = @_;
@@ -37,6 +43,11 @@ sub has_value {
     }
     if (exists($attr{'order'})) {
 	$buildhash{'order'}=$attr{'order'};
+    } else {
+	# ensure 'auto' order within a source file
+	# nothing is done for composition
+	$buildhash{'order'} = $default_auto_order;
+	$default_auto_order += 10;
     }
 
     my $role='Ledger::Role::HaveValues';
@@ -112,6 +123,56 @@ sub has_value {
 	%attrhash,
 	);
     #$meta->find_method_by_name('_register_value_name')->execute($meta, $name);
+}
+
+sub has_value_constant {
+    my ( $meta, $name, %attr ) = @_;
+
+    if (!exists($attr{'default'})) {
+	die "Missing 'default' attribute in constant value $name";
+    }
+    
+    has_value($meta, $name,
+	      isa      => 'Constant',
+	      required  => 1,
+	      reset_on_cleanup => 1,
+	      %attr,
+	);
+}
+
+sub has_value_directive {
+    my ( $meta, $name, %attr ) = @_;
+    
+    has_value_constant($meta, 'directive',
+		       default          => $name,
+		       order            => -50,
+		       %attr,
+	);
+}
+
+sub has_value_separator_simple {
+    my ( $meta, $name, %attr ) = @_;
+
+    has_value($meta, $name,
+	      isa              => 'WS1',
+	      required         => 1,
+	      reset_on_cleanup => 1,
+	      default          => ' ',
+	      %attr,
+	);
+}
+
+sub has_value_indented_line {
+    my ( $meta, $name, %attr ) = @_;
+
+    has_value($meta, $name,
+	      isa              => 'WS1',
+	      required         => 1,
+	      reset_on_cleanup => 1,
+	      default          => '    ',
+	      order            => -70,
+	      %attr,
+	);
 }
 
 1;

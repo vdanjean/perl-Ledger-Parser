@@ -7,9 +7,17 @@ with (
     'Ledger::Role::HaveReadableElements',
     );
 
+sub _listElementKindsOrig {
+    my $self = shift;
+    return $self->parent->_listElementKindsOrig;
+}
+
 sub _listElementKinds {
     my $self = shift;
-    return $self->parent->_listElementKinds;
+    return (
+	$self->parent->_listElementKindsOrig,
+	$self->_listElementKindsAppend,
+	);
 }
 
 1;

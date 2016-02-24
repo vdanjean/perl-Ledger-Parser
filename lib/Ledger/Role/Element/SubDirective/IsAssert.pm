@@ -1,9 +1,9 @@
-package Ledger::Role::SubDirective::IsAssert;
+package Ledger::Role::Element::SubDirective::IsAssert;
 use Moose::Role;
 use namespace::sweep;
 use Ledger::Util::ValueAttribute;
 
-sub keyword_name {
+sub subdirective_name {
     return 'assert';
 }
 
@@ -12,7 +12,7 @@ sub end_parse_line_re {
 }
 
 with (
-    'Ledger::Role::SubDirective::Simple',
+    'Ledger::Role::Element::SubDirective::Simple',
     );
 
 has_value 'assert' => (

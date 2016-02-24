@@ -3,27 +3,25 @@ use Moose;
 use namespace::sweep;
 use Ledger::Util::ValueAttribute;
 
-with (
-    'Ledger::Role::HaveCachedText',
-    'Ledger::Role::Readable',
-    );
-
 extends 'Ledger::Journal::Element';
 
-has_value 'keyword' => (
-    isa      => 'Constant',
-    default  => 'python',
+with (
+    'Ledger::Role::Element::Layout::MultiLines::List',
     );
 
-has_value 'code' => (
-    isa      => 'Str', # TODO: should ensure/verify the last line ends with \n
-                       # TODO: should ensure/verify no blank line
-                       # TODO: should ensure/verify always blank at line start
-    required => 1,
-    default  => '',
+has '+elements' => (
+    isa      => 'ArrayRef[Ledger::Journal::Python::Code]',
     );
 
-sub load_from_reader {
+sub _setupElementKinds {
+    return [
+	'Ledger::Journal::Python::Code',
+	];
+}
+
+has_value_directive 'python';
+
+sub load_values_from_reader {
     my $self = shift;
     my $reader = shift;
 
@@ -31,33 +29,55 @@ sub load_from_reader {
 	'reader' => $reader,
 	'accept_with_blank_re' => qr/^python/,
 	'parse_line_re' => qr<
-	     ^(?<keyword>python)
+	     ^(?<directive>python)
 	                    >x,
 	'noaccept_error_msg' => "not starting a python block",
 	'accept_error_msg' => "invalid python line (garbage data?)",
-	'store' => ['keyword'],
+	'store' => 'all',
 	);
-    my $code;
-    my $next_line=$reader->pop_line;
-    while (defined($next_line) && $next_line =~ /^\s+\S/) {
-	$code .= $next_line;
-	$next_line=$reader->pop_line;
-    }
-    $self->code($code);
-    if (defined($next_line)) {
-	$reader->give_back_next_line($next_line);
-    }
+    return;
 };
 
-sub compute_text {
-    my $self = shift;
-    return $self->keyword_str."\n".$self->code_str;
-}
+1;
+######################################################################
+package Ledger::Journal::Python::Code;
+use Moose;
+use namespace::sweep;
+use Ledger::Util::ValueAttribute;
 
-sub numlines {
+extends 'Ledger::Element';
+
+with (
+    'Ledger::Role::Element::Layout::OneLine',
+    );
+
+has_value 'ws1' => (
+    isa              => 'Str',
+    required         => 1,
+    reset_on_cleanup => 1,
+    'default'        => "\t",
+    );
+
+has_value 'code' => (
+    isa      => 'Str',
+    );
+
+sub load_values_from_reader {
     my $self = shift;
-    my $str = $self->code_str;
-    return 1 + $str =~ tr/\n//;;
-}
+    my $reader = shift;
+
+    $self->load_from_reader_helper(
+	'reader' => $reader,
+	'accept_re' => qr/^\s/,
+	'parse_line_re' => qr /^
+                (?<ws1>\s)
+                (?<code>.*)
+                           /x,
+	'noaccept_error_msg' => "not a python code line",
+	'accept_error_msg' => "invalid python code line",
+	'store' => 'all',
+	);
+    return;
+};
 
 1;

@@ -9,9 +9,7 @@ use Ledger::Util::ValueAttribute;
 extends 'Ledger::Journal::Element';
 
 with (
-    'Ledger::Role::IsElementWithElements' => {
-	-excludes => [ 'as_string', '_printable_elements' ],
-    },
+    'Ledger::Role::Element::Layout::MultiLines::List',
     );
 
 has '+elements' => (
@@ -80,7 +78,7 @@ has_value 'note' => (
     isa      => 'MetaData',
     );
 
-before 'load_from_reader' => sub {
+sub load_values_from_reader {
     my $self = shift;
     my $reader = shift;
 
@@ -88,8 +86,8 @@ before 'load_from_reader' => sub {
 	'reader' => $reader,
 	'accept_re' => qr/^[0-9]/,
 	'parse_line_re' => qr<
-	    ^(?<date>[0-9]\S*)
-	    (?: = (?<auxdate>[0-9]\S*))?
+	    ^(?<date>[0-9]\S*?)
+	    (?: = (?<auxdate>[0-9]\S*?))?
             (?<ws1>\s+)
 	    (?: (?<state>[!*]) (?<ws2>\s*) )?
 	    (?: \((?<code>[^\)]+)\) (?<ws3>\s*))?
@@ -102,7 +100,7 @@ before 'load_from_reader' => sub {
 	'store' => 'all',
 	);
     return;
-};
+}
 
 sub compute_text {
     my $self = shift;
@@ -114,24 +112,8 @@ sub compute_text {
 
 sub _printable_elements {
     my $self = shift;
-    return @_;
-}
-
-sub as_string {
-    my $self = shift;
-    return $self->_as_string_main
-	.$self->_as_string_elements(
-	$self->_filter_elements(
-	    sub {
-		not $_->isa('Ledger::Posting');
-	    }
-	))
-	.$self->_as_string_elements(
-	$self->_filter_elements(
-	    sub {
-		$_->isa('Ledger::Posting');
-	    }
-	));
+    use sort 'stable';
+    return sort { $_->isa('Ledger::Posting') } ($self->all_elements(@_));
 }
 
 override 'validate' => sub {

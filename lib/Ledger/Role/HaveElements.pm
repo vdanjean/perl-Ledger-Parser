@@ -7,6 +7,9 @@ use Ledger::Element;
 with (
     'Ledger::Role::IsParent',
     'Ledger::Role::IsPrintable',
+    'Ledger::Role::Iterator::Elements' => {
+	-alias  => { 'getElementsIterator' => 'iterator', },
+    },
     );
 
 requires 'numlines';
@@ -34,6 +37,11 @@ has 'elements' => (
     },
     init_arg => undef,
     );
+
+sub _iterable_elements {
+    my $self = shift;
+    return $self->all_elements(@_);
+}
 
 sub _printable_elements {
     my $self = shift;
