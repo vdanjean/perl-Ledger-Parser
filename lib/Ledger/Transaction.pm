@@ -32,12 +32,7 @@ has_value 'auxdate' => (
     isa         => 'Date',
     );
 
-has_value 'ws1' => (
-    isa              => 'WS1',
-    required         => 1,
-    reset_on_cleanup => 1,
-    default          => ' ',
-    );
+has_value_separator_simple 'ws1';
 
 has_value 'state' => (
     isa         => 'TransactionState',
@@ -45,21 +40,14 @@ has_value 'state' => (
     default     => Ledger::Transaction::State::DEFAULT,
     );
 
-has_value 'ws2' => (
-    isa              => 'WS0',
-    required         => 1,
-    reset_on_cleanup => 1,
-    default          => ' ',
-    );
+has_value_separator_optional 'ws2';
 
 has_value 'code' => (
     isa         => 'Str',
     );
 
-has_value 'ws3' => (
-    isa              => 'WS0',
-    required         => 1,
-    default          => ' ',
+has_value_separator_optional 'ws3' => (
+    reset_on_cleanup => 0,
     );
 
 has_value 'description' => (
@@ -67,19 +55,9 @@ has_value 'description' => (
     required => 1,
     );
 
-has_value 'ws4' => (
-    isa              => 'WS2',
-    required         => 1,
-    reset_on_cleanup => 1,
-    default          => '  ',
-    );
+has_value_separator_hard 'ws4';
 
-has_value 'ws5' => (
-    isa      => 'WS0',
-    required => 1,
-    default  => ' ',
-    reset_on_cleanup => 1,
-    );
+has_value_separator_optional 'ws5';
 
 has_value 'note' => (
     isa      => 'MetaData',

@@ -9,7 +9,9 @@ Moose::Exporter->setup_import_methods(
     with_meta => [ 'has_value', 
 		   'has_value_constant',
 		   'has_value_directive',
+		   'has_value_separator_optional',
 		   'has_value_separator_simple',
+		   'has_value_separator_hard',
 		   'has_value_indented_line',
     ],
     #also      => 'Moose',
@@ -158,6 +160,30 @@ sub has_value_separator_simple {
 	      required         => 1,
 	      reset_on_cleanup => 1,
 	      default          => ' ',
+	      %attr,
+	);
+}
+
+sub has_value_separator_optional {
+    my ( $meta, $name, %attr ) = @_;
+
+    has_value($meta, $name,
+	      isa              => 'WS0',
+	      required         => 1,
+	      reset_on_cleanup => 1,
+	      default          => ' ',
+	      %attr,
+	);
+}
+
+sub has_value_separator_hard {
+    my ( $meta, $name, %attr ) = @_;
+
+    has_value($meta, $name,
+	      isa              => 'WS0',
+	      required         => 1,
+	      reset_on_cleanup => 1,
+	      default          => '  ',
 	      %attr,
 	);
 }
