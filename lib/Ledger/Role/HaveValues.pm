@@ -8,6 +8,7 @@ use Ledger::Util qw(indent);
 
 with(
     'Ledger::Role::IsParent',
+    'Ledger::Role::Iterator::Values',
     );
 
 has 'values' => (
@@ -89,6 +90,13 @@ sub get_all_value_names {
 	my $raw_b='_'.$b.'_rawvalue';
 	$self->$raw_a->order <=> $self->$raw_b->order
     } @{$names};
+}
+
+sub _iterable_values {
+    my $self = shift;
+    return sort {
+	$a->order <=> $b->order
+    } $self->all_values;
 }
 
 before 'cleanup' => sub {

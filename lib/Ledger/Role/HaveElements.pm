@@ -8,7 +8,10 @@ with (
     'Ledger::Role::IsParent',
     'Ledger::Role::IsPrintable',
     'Ledger::Role::Iterator::Elements' => {
-	-alias  => { 'getElementsIterator' => 'iterator', },
+	-alias  => { 
+	    'getElementsIterator' => 'iterator',
+	    'getValuesElementsIterator' => 'valuesIterator',
+	},
     },
     );
 
@@ -40,7 +43,7 @@ has 'elements' => (
 
 sub _iterable_elements {
     my $self = shift;
-    return $self->all_elements(@_);
+    return $self->_printable_elements(@_);
 }
 
 sub _printable_elements {

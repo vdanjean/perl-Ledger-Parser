@@ -8,6 +8,7 @@ extends 'Ledger::Value::SubType::MetaDataBase';
 
 with (
     'Ledger::Role::IsSubValue',
+    'Ledger::Role::HaveValues',
     );
 
 has_value 'name' => (

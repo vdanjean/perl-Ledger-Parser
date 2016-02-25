@@ -113,7 +113,9 @@ sub compute_text {
 sub _printable_elements {
     my $self = shift;
     use sort 'stable';
-    return sort { $_->isa('Ledger::Posting') } ($self->all_elements(@_));
+    return sort {
+	$a->isa('Ledger::Posting') <=> $b->isa('Ledger::Posting')
+    } ($self->all_elements(@_));
 }
 
 override 'validate' => sub {

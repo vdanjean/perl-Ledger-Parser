@@ -2,6 +2,10 @@ package Ledger::Role::HaveSubValues;
 use Moose::Role;
 use namespace::sweep;
 
+with (
+    'Ledger::Role::Iterator::Values',
+    );
+
 requires '_null_value';
 
 has '_has_value' => (
@@ -62,4 +66,10 @@ sub _parse_str {
 
     return $self->value->parse_str(@_);
 }
+
+sub _iterable_values {
+    my $self = shift;
+    return $self->value->_iterable_values(@_);
+}
+
 1;

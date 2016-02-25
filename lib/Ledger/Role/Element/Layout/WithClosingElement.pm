@@ -25,7 +25,9 @@ sub _printable_elements {
     my $endname=$self->meta->name.'::EndLine';
 
     use sort 'stable';
-    return sort { $_->isa($endname) } ($self->all_elements(@_));
+    return sort {
+	$a->isa($endname) <=> $b->isa($endname)
+    } ($self->all_elements(@_));
 }
 
 sub _readEnded {
