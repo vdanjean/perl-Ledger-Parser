@@ -74,6 +74,13 @@ has_value 'ws4' => (
     default          => '  ',
     );
 
+has_value 'ws5' => (
+    isa      => 'WS0',
+    required => 1,
+    default  => ' ',
+    reset_on_cleanup => 1,
+    );
+
 has_value 'note' => (
     isa      => 'MetaData',
     );
@@ -92,7 +99,7 @@ sub load_values_from_reader {
 	    (?: (?<state>[!*]) (?<ws2>\s*) )?
 	    (?: \((?<code>[^\)]+)\) (?<ws3>\s*))?
 	    (?<description>\S.*?)
-	    (?: (?<ws4>\s{2,}|\t);(?<note>.*) )?
+	    (?: (?<ws4>\s{2,}|\t);(?<ws5>\s*)(?<note>.*) )?
 	                    >x,
 	'accept_error_msg' => "invalid transaction line",
 	'noaccept_error_msg' => "not starting an transaction block",
