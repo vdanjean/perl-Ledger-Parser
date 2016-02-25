@@ -1,4 +1,4 @@
-package Ledger::Role::IsNote;
+package Ledger::Role::Element::IsNote;
 use Moose::Role;
 use namespace::sweep;
 use Ledger::Util::ValueAttribute;

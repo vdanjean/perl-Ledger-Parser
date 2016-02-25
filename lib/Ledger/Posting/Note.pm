@@ -4,7 +4,7 @@ use namespace::sweep;
 use Ledger::Util::ValueAttribute;
 
 with (
-    'Ledger::Role::IsNote',
+    'Ledger::Role::Element::IsNote',
     );
 
 extends 'Ledger::Posting::Element';

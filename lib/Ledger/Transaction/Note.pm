@@ -3,7 +3,7 @@ use Moose;
 use namespace::sweep;
 
 with (
-    'Ledger::Role::IsNote',
+    'Ledger::Role::Element::IsNote',
     );
 
 extends 'Ledger::Transaction::Element';
