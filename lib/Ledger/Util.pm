@@ -2,8 +2,10 @@ package Ledger::Util;
 use strict;
 use warnings;
 use List::Util qw(min);
+use Scalar::Util qw(blessed);
 use Math::BigRat;
 use utf8;
+use Carp;
 
 my $re_account_part = qr/(?:
                               [^\s:\[\(;]+?[ ]??[^\s:\[\(;]*?
@@ -100,11 +102,37 @@ sub indent {
     return $str;
 }
 
+sub run {
+    my $code = shift;
+    my $obj = shift;
+    my @params = @_;
+    if (ref($code) eq "CODE") {
+	# code
+	return $code->($obj, @params);
+    } elsif (blessed($obj) && $obj->can($code)) {
+	# method name
+	return $obj->$code(@params);
+    } else {
+	croak "Invalid code $code";
+    }    
+}
+
+sub runs {
+    my $codes = shift;
+    my @params = @_;
+    if (ref($codes) ne "ARRAY") {
+	$codes=[$codes];
+    }
+    foreach my $code (@{$codes}) {
+	run($code, @params);
+    }
+}
+
 our (@ISA, @EXPORT_OK, %EXPORT_TAGS);
 BEGIN {
     require Exporter;
     @ISA = qw(Exporter);
-    @EXPORT_OK = qw(format buildFormatParam re_account re_commodity indent);
+    @EXPORT_OK = qw(format buildFormatParam re_account re_commodity indent run runs);
     %EXPORT_TAGS = (
 	'regexp' => ['re_account', 're_commodity'],
 	'all' => \@EXPORT_OK,

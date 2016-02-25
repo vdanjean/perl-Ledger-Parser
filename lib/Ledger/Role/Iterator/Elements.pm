@@ -2,6 +2,7 @@ package Ledger::Role::Iterator::Elements;
 use Moose::Role;
 use namespace::sweep;
 use Ledger::Util::Iterator;
+use Ledger::Util;
 use Carp;
 
 requires '_iterable_elements';
@@ -33,8 +34,8 @@ sub getElementsIterator {
 		  return $next if defined($next);
 		  $subiterator=undef;
 		  $options{'skip-sub-elements'}=0;
-		  if ( defined($options{'exit-element'})) {
-		      $options{'exit-element'}->($cur_element);
+		  if ( defined($options{'exit-element-hooks'})) {
+		      Ledger::Util::runs($options{'exit-element-hooks'}, undef, $cur_element);
 		  }
 		  $cur_element=undef;
 	      }
@@ -50,6 +51,10 @@ sub getElementsIterator {
 	      if (($options{'follow-includes'} // 0)
 		  && $next->isa('Ledger::Journal::Include')
 		  && $next->loaded) {
+		  $cur_element=$next;
+		  if ( defined($options{'enter-element-hooks'})) {
+		      Ledger::Util::runs($options{'enter-element-hooks'}, undef, $cur_element);
+		  }
 		  $subiterator=$next->incJournal->getElementsIterator(
 		      %options,
 		      );;
@@ -58,9 +63,12 @@ sub getElementsIterator {
 	      if (($options{'filter-out-element'} // 0) && $options{'filter-out-element'}->($next)) {
 		  next;
 	      }
-	      if ($next->does('Ledger::Role::Iterator::Elements')) {
+	      if ($next->does('Ledger::Role::HaveElements')) {
 		  $cur_element=$next;
 		  if ( (!defined($options{'enter-element'})) || $options{'enter-element'}->($cur_element)) {
+		      if ( defined($options{'enter-element-hooks'})) {
+			  Ledger::Util::runs($options{'enter-element-hooks'}, undef, $cur_element);
+		      }
 		      $subiterator=$next->getElementsIterator(
 			  %options,
 			  );

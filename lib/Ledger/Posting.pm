@@ -94,4 +94,26 @@ sub compute_text {
 	);
 }
 
+###################################################################
+# TAG management
+with (
+    'Ledger::Role::HaveTags',
+    );
+
+sub _collect_tags {
+    my $self = shift;
+
+    my $val_it = $self->valuesIterator(
+	'select-value' => sub {
+	    my $obj = shift;
+	    return $obj->isa("Ledger::Value::MetaData")
+		&& $obj->value->does("Ledger::Role::HaveTags");
+	}
+	);
+    $self->_reset_tags($self->parent->tags_flatlist);
+    while (my $tag = $val_it->next) {
+	$self->_merge_tags($tag->value);
+    }
+}
+    
 1;

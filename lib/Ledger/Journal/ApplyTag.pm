@@ -17,7 +17,7 @@ has_value_directive 'apply tag';
 
 has_value_separator_simple 'ws1';
 
-has_value 'tag' => (
+has_value 'appliedTag' => (
     isa    => 'TaggedValue',
     required => 1,
     );
@@ -33,14 +33,14 @@ sub load_values_from_reader {
 	'parse_line_re' => qr<
 	     ^(?<directive>apply\s+tag)
 	     (?<ws1>\s+)
-	     (?<tag>.*\S)
+	     (?<appliedTag>.*\S)
 	                    >x,
 	'noaccept_error_msg' => "not starting an apply tag section",
 	'accept_error_msg' => "invalid 'apply tag' line",
 	'parse_value_error_msg' => "invalid data in 'apply tag' declaration",
 	'store' => 'all', # lastline wont be defined so wont be set
 	);
-    if (! $self->tag->isa('Ledger::Value::SubType::TaggedValue')) {
+    if (! $self->appliedTag->isa('Ledger::Value::SubType::TaggedValue')) {
 	die Ledger::Exception::ParseError->new(
 	    'abortParsing' => 1,
 	    'line' => $line,
@@ -50,6 +50,17 @@ sub load_values_from_reader {
     }
 }
 
+###################################
+# TAG management
+with (
+    'Ledger::Role::HaveTags',
+    );
+
+sub _collect_tags {
+    my $self = shift;
+    $self->_reset_tags($self->appliedTag->tags_flatlist);
+}
+    
 1;
 
 ######################################################################

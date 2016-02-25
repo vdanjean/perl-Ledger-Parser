@@ -54,4 +54,17 @@ sub parse_str {
     $self->value_str($4) if defined($4);
 }
 
+###################################################################
+# TAG management
+with (
+    'Ledger::Role::HaveTags',
+    );
+
+sub _collect_tags {
+    my $self = shift;
+
+    $self->_reset_tags;
+    $self->_add_valued_tag($self->name_str, $self->value_str);
+}
+
 1;
