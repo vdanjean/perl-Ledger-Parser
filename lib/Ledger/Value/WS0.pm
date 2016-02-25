@@ -2,7 +2,7 @@ package Ledger::Value::WS0;
 use Moose;
 use namespace::sweep;
 
-extends 'Ledger::Value::Str';
+extends 'Ledger::Value::WS';
 
 around 'value' => sub {
     my $orig = shift;
