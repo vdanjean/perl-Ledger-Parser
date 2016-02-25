@@ -14,7 +14,10 @@ sub getElementsIterator {
     my $cur_element;
     my @curIterableElements=$self->_iterable_elements;
 
-
+    if ($global_options{'add-self'} && $self->isa('Ledger::Element')) {
+	unshift @curIterableElements, $self;
+	delete($global_options{'add-self'});
+    }
     #my $follow_include=exists($options{'follow-includes'});
 
     
@@ -76,7 +79,10 @@ sub getElementsIterator {
 sub getValuesElementsIterator {
     my $self=shift;
     my %global_options = (@_);
-    my $element_it=$self->getElementsIterator(%global_options);
+    my $element_it=$self->getElementsIterator(
+	'add-self' => 1,
+	%global_options,
+	);
     my $value_it=undef;
     
     return Ledger::Util::Iterator->new(
