@@ -39,6 +39,7 @@ sub read_file {
 	    'file' => $filename,
 	),
 	);
+    $journal->applyRecursive();
     $journal->validate if $self->validate;
     return $journal;
 }

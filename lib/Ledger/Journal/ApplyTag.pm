@@ -58,7 +58,7 @@ with (
 
 sub _collect_tags {
     my $self = shift;
-    $self->_reset_tags($self->appliedTag->tags_flatlist);
+    $self->_reset_tags($self->appliedTag->tags);
 }
     
 1;

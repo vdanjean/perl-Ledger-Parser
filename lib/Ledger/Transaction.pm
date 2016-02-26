@@ -164,7 +164,7 @@ sub _err {
 ###################################################################
 # TAG management
 with (
-    'Ledger::Role::HaveTags',
+    'Ledger::Role::Element::AppliedTags',
     );
 
 sub _collect_tags {

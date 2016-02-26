@@ -97,7 +97,7 @@ sub compute_text {
 ###################################################################
 # TAG management
 with (
-    'Ledger::Role::HaveTags',
+    'Ledger::Role::Element::AppliedTags',
     );
 
 sub _collect_tags {
@@ -110,7 +110,7 @@ sub _collect_tags {
 		&& $obj->value->does("Ledger::Role::HaveTags");
 	}
 	);
-    $self->_reset_tags($self->parent->tags_flatlist);
+    $self->_reset_tags($self->parent->tags);
     while (my $tag = $val_it->next) {
 	$self->_merge_tags($tag->value);
     }

@@ -17,8 +17,8 @@ has '_tags' => (
     default  => sub { {} },
     handles  => {
 	tag_names           => 'keys',
-	tags_flatlist       => 'elements',
-	tags                => 'kv',
+	tags                => 'elements',
+	tag_pairs           => 'kv',
 	has_no_tags         => 'is_empty',
 	has_tags            => 'count',
 	has_tag             => 'exists',
@@ -61,7 +61,7 @@ sub _add_simple_tag {
 sub _merge_tags {
     my $self = shift;
     my $taggedObj = shift;
-    return $self->_add_valued_tag($taggedObj->tags_flatlist);
+    return $self->_add_valued_tag($taggedObj->tags);
 }
 
 sub tag {
@@ -74,7 +74,7 @@ sub tag {
 }
 
 # Update before read access if required
-for my $m ('tag_names', 'tags', 'tags_flatlist', 'has_no_tags', 'has_tags',
+for my $m ('tag_names', 'tags', 'tag_pairs', 'has_no_tags', 'has_tags',
 	   'tag0', 'tag') {
     before $m => sub {
 	my $self = shift;

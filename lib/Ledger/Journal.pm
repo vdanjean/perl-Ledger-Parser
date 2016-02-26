@@ -14,6 +14,7 @@ with (
 	    as_string => '_as_string',
 	},
     },
+    'Ledger::Role::ApplyRecursive',
     );
 
 has '+elements' => (
