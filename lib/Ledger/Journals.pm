@@ -65,15 +65,20 @@ sub add_journal {
 	if ($reader->is_file) {
 	    my $file=$reader->file;
 	    my $filename=$file->stringify;
+	    #print STDERR "Trying to load $filename\n";
 	    my @jnx = $self->_filter_journals(sub {
+		#if ($_->is_file) {
+		#    print STDERR "  comparing to ".$_->file->stringify."\n";
+		#};
 		$_->is_file
 		    && $_->file->stringify eq $filename
 	    });
 	    if (scalar(@jnx)>0) {
 		my $journal=$jnx[0];
-		print "Reusing already loaded journal\n";
+		#print STDERR "Reusing already loaded journal\n";
 		return $journal;
 	    }
+	    #print STDERR "Must load $filename\n";
 	    $opts{'file'}=$file;
 	}
 	my $journal=Ledger::Journal->new(
