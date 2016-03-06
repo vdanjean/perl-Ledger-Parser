@@ -48,7 +48,7 @@ sub read_string {
     my ($self, $str) = @_;
     my $journal=$self->journals->add_journal(
 	'config' => $self,
-	'reader' => Ledger::Util::Reader(
+	'reader' => Ledger::Util::Reader->new(
 	    'string' => $str,
 	),
 	);
