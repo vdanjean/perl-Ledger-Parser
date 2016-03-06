@@ -25,7 +25,7 @@ has 'transaction_format' => (
     is          => 'rw',
     isa         => 'Str',
     default     => '@{date:%s}@{auxdate:=%s:%s}@{ws1:%s}@{state:%s: }@{ws2:%s}@{code:(%s) :%s}'.
-    '@{ws3:%s}@{description:%s}@{ws4:%s}@{note:;:}@{ws5:%s}@{note:%s}',
+    '@{description:%s}@{ws4:%s}@{note:;: :}@{ws5:%s}@{note:%s}',
     );
 
 has 'posting_format' => (
