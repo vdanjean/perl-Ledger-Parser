@@ -60,10 +60,18 @@ sub getElementsIterator {
 		      );;
 		  next;
 	      }
-	      if (($options{'filter-out-element'} // 0) && $options{'filter-out-element'}->($next)) {
+	      my $filter=0;
+	      # 0: keep element
+	      # 1: skip it totally
+	      # 2: skip its subelements
+	      if (exists($options{'filter-out-element'})) {
+		  $filter=$options{'filter-out-element'}->($next);
+	      }
+	      if ($filter && $filter != 2) {
 		  next;
 	      }
-	      if ($next->does('Ledger::Role::HaveElements')) {
+	      if ($filter != 2
+		  && $next->does('Ledger::Role::HaveElements')) {
 		  $cur_element=$next;
 		  if ( (!defined($options{'enter-element'})) || $options{'enter-element'}->($cur_element)) {
 		      if ( defined($options{'enter-element-hooks'})) {
