@@ -53,6 +53,7 @@ sub _printable_elements {
 
 sub as_string {
     my $self = shift;
+    #print "Printing ", ref($self), "\n";
     return join("", map { $_->as_string(); } $self->_printable_elements(@_));
 }
 

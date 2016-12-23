@@ -108,8 +108,10 @@ sub validateValues {
     my $self=shift;
     my @res = map {
 	my $meth=$_.'_validate';
+	#print "Calling $meth\n";
 	$self->$meth(@_);
     } $self->all_value_names;
+    #print "Values validated\n";
 }
 
 sub formatValueParams {

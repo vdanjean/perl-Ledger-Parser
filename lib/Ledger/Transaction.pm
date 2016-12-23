@@ -106,13 +106,16 @@ sub _printable_elements {
 override 'validate' => sub {
     my $self = shift;
 
+    #print "V1 in ",ref($self),"\n";
     super();
+    #print "V2\n";
 
     # some sanity checks for the transaction
     for my $kind (Ledger::Posting::Kind::REAL,
 		  Ledger::Posting::Kind::VIRTUALBALANCED) {
       CHECK:
 	{
+	    #print "V2 a\n";
 	    my @postings=$self->_filter_elements(
 		sub {
 		    $_->isa('Ledger::Posting')
@@ -148,6 +151,7 @@ override 'validate' => sub {
 	    }
 	}
     }
+    #print "V3\n";
 };
 
 use Carp;

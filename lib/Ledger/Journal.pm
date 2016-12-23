@@ -84,7 +84,9 @@ sub _readEnded {
 
 sub as_string {
     my $self = shift;
+    #print "Before validate\n";
     $self->validate;
+    #print "After validate\n";
     return $self->_as_string;
 }
 
