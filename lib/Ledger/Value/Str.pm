@@ -18,4 +18,8 @@ sub _compute_text {
     return $self->value;
 }
 
+sub validate {
+    return 1;
+}
+
 1;
