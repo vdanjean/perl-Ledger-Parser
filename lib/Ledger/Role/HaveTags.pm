@@ -70,7 +70,7 @@ sub tag {
     if (!$self->has_tag($name)) {
 	return undef;
     }
-    return $self->tag($name) // "";
+    return $self->tag0($name) // "";
 }
 
 # Update before read access if required
