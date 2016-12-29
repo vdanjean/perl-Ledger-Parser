@@ -92,6 +92,7 @@ sub get_all_value_names {
     } @{$names};
 }
 
+## BEGIN Hash support
 sub _hashValue {
     my $self = shift;
     my %hv = map {
@@ -100,6 +101,8 @@ sub _hashValue {
     } $self->get_all_value_names;
     return \%hv;
 }
+
+## END Hash support
 
 sub _iterable_values {
     my $self = shift;

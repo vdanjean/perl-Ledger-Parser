@@ -75,6 +75,7 @@ around 'numlines' => sub {
 	+ sum($self->_map_elements(sub { $_->numlines(@_); }));
 };
 
+## BEGIN Hash support
 sub _toHashElements {
     my $self = shift;
 
@@ -100,6 +101,8 @@ around 'toHash' => sub {
 	);
     return %hv;
 };
+
+## END Hash support
 
 1;
 

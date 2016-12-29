@@ -68,6 +68,7 @@ sub _parse_str {
         );
 }
 
+## BEGIN Hash support
 around '_hashKey' => sub {
     my $orig = shift;
     my $self = shift;
@@ -78,5 +79,6 @@ around '_hashKey' => sub {
     $realclass=$1;
     return $self->$orig(@_).".".$realclass;
 };
+## END Hash support
 
 1;

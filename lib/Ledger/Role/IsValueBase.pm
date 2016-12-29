@@ -128,6 +128,7 @@ before 'cleanup' => sub {
     }
 };
 
+## BEGIN Hash support
 use Data::Dumper;
 sub _hasSpecificValue {
     my $self = shift;
@@ -208,5 +209,6 @@ sub toHash {
 	$self->_hashKey => $val
 	);
 }
+## END Hash support
 
 1;

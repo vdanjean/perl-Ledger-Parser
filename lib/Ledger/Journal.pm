@@ -109,9 +109,11 @@ sub startlinenum {
     return 0;
 }
 
+## BEGIN Hash support
 sub toHash {
     return ();
 }
+## END Hash support
 
 1;
 # ABSTRACT: Represent Ledger journal

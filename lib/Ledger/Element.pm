@@ -19,6 +19,7 @@ sub validate {
     return 1;
 }
 
+## BEGIN Hash support
 sub toHash {
     my $self=shift;
     my %h;
@@ -27,6 +28,7 @@ sub toHash {
     }
     return %h;
 }
+## END Hash support
 
 sub numlines {
     return 1;
