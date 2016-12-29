@@ -12,6 +12,7 @@ with (
 
 has_value 'comment' => (
     isa    => 'StrippedStr',
+    default => '',
 );
 
 sub compute_text {

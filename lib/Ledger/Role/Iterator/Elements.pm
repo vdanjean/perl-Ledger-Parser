@@ -2,6 +2,7 @@ package Ledger::Role::Iterator::Elements;
 use Moose::Role;
 use namespace::sweep;
 use Ledger::Util::Iterator;
+use Ledger::Util::Filter ':constants';
 use Ledger::Util;
 use Carp;
 
@@ -61,16 +62,16 @@ sub getElementsIterator {
 		  next;
 	      }
 	      my $filter=0;
-	      # 0: keep element
-	      # 1: skip it totally
-	      # 2: skip its subelements
+	      # ACCEPT: keep element
+	      # FILTER: skip it totally
+	      # FILTERSUB: skip its subelements
 	      if (exists($options{'filter-out-element'})) {
-		  $filter=$options{'filter-out-element'}->($next);
+		  $filter=$options{'filter-out-element'}->($next) // ACCEPT;
 	      }
-	      if ($filter && $filter != 2) {
+	      if ($filter == FILTER) {
 		  next;
 	      }
-	      if ($filter != 2
+	      if ($filter != FILTERSUB
 		  && $next->does('Ledger::Role::HaveElements')) {
 		  $cur_element=$next;
 		  if ( (!defined($options{'enter-element'})) || $options{'enter-element'}->($cur_element)) {
@@ -82,7 +83,8 @@ sub getElementsIterator {
 			  );
 		  }
 	      }
-	      if (($options{'select-element'} // 0) && !$options{'select-element'}->($next)) {
+	      if (($options{'select-element'} // 0) 
+		  && !$options{'select-element'}->($next)) {
 		  next;
 	      }
 	      

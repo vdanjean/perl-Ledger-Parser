@@ -80,7 +80,7 @@ sub _toHashElements {
 
     my @elements=map {
 	my $e=$_;
-	my %hr=$e->toHash;
+	my %hr=$e->toHash(@_);
 	$hr{'type'}= ref($e);
 	$hr{'type'} =~ s/^Ledger:://;
 	\%hr

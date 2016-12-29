@@ -68,4 +68,15 @@ sub _parse_str {
         );
 }
 
+around '_hashKey' => sub {
+    my $orig = shift;
+    my $self = shift;
+    my $realclass = $self->value->meta->name;
+    if ($realclass !~ /^Ledger::Value::SubType::([^:]+)/) {
+	die "Invalid subclass '$realclass' for MetaData value";
+    }
+    $realclass=$1;
+    return $self->$orig(@_).".".$realclass;
+};
+
 1;

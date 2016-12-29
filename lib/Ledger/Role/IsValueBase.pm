@@ -2,6 +2,7 @@ package Ledger::Role::IsValueBase;
 use Moose::Role;
 use namespace::sweep;
 use Ledger::Exception::Validation;
+use Ledger::Util::Filter ':constants';
 
 with (
     'Ledger::Role::IsParent',
@@ -135,12 +136,52 @@ sub _hasSpecificValue {
     }
     my $def = $self->default_value;
     my $v=$self->value;
-    print Dumper($v), "\n";
+    #print Dumper($v), "\n";
     if (ref($self->value)) {
 	return $self->value != $self->default_value;
     } else {
 	return $self->value ne $self->default_value;
     }
+}
+
+sub _filterValue {
+    my $self = shift;
+    my $name = shift;
+    my $hval = shift;
+    my %opts = (@_);
+
+    if ($opts{'filter-absent'} // 1) {
+	if (not defined($hval)) {
+	    #print STDERR "filtering absent $name\n";
+	    return FILTER;
+	}
+    }
+    if ($opts{'filter-generic'} // 1) {
+	if (not $self->_hasSpecificValue) {
+	    #print STDERR "filtering generic $name\n";
+	    return FILTER;
+	}
+    }
+    if ($opts{'filter-spaces'} // 1) {
+	if ($name =~ /^ws[0-9]+$/) {
+	    #print STDERR "filtering space $name\n";
+	    return FILTER;
+	}
+    }
+    if ($opts{'filter-empty'} // 1) {
+	if (ref($hval) eq 'HASH') {
+	    if (!%{$hval}) {
+		#print STDERR "filtering empty hash $name\n";
+		return FILTER;
+	    }
+	} elsif (ref($hval) eq "") {
+	    if ("" eq $hval) {
+		#print STDERR "filtering empty string $name\n";
+		return FILTER;
+	    }
+	}
+    }
+    return ACCEPT;
 }
 
 sub _hashKey {
@@ -150,22 +191,21 @@ sub _hashKey {
 
 sub _hashValue {
     my $self = shift;
-    if (!$self->_hasSpecificValue) {
-	print "Skipping value ", $self->value_str, "\n";
-	return undef;
-    }
     return $self->value_str;
 }
 
 sub toHash {
     my $self = shift;
 
+    my $hkey=$self->_hashKey;
     my $val=$self->_hashValue;
-    if (not defined($val)) {
+    #print Dumper(\@_);
+    my $filter=$self->_filterValue($hkey, $val, @_) // ACCEPT;
+    if ($filter == FILTER) {
 	return ();
     }
     return (
-	$self->_hashKey => $self->_hashValue
+	$self->_hashKey => $val
 	);
 }
 
