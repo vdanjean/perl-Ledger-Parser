@@ -92,6 +92,15 @@ sub get_all_value_names {
     } @{$names};
 }
 
+sub _hashValue {
+    my $self = shift;
+    my %hv = map {
+	my $raw='_'.$_.'_rawvalue';
+	$self->$raw->toHash(@_);
+    } $self->get_all_value_names;
+    return \%hv;
+}
+
 sub _iterable_values {
     my $self = shift;
     return sort {

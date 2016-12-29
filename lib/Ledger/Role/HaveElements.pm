@@ -75,5 +75,31 @@ around 'numlines' => sub {
 	+ sum($self->_map_elements(sub { $_->numlines(@_); }));
 };
 
+sub _toHashElements {
+    my $self = shift;
+
+    my @elements=map {
+	my $e=$_;
+	my %hr=$e->toHash;
+	$hr{'type'}= ref($e);
+	$hr{'type'} =~ s/^Ledger:://;
+	\%hr
+    } $self->all_elements;
+    return (
+	'elements' => \@elements,
+    );
+}
+
+around 'toHash' => sub {
+    my $orig = shift;
+    my $self = shift;
+
+    my %hv = (
+	$self->$orig(@_),
+	$self->_toHashElements(@_),
+	);
+    return %hv;
+};
+
 1;
 

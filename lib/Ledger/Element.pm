@@ -19,6 +19,15 @@ sub validate {
     return 1;
 }
 
+sub toHash {
+    my $self=shift;
+    my %h;
+    if ($self->does('Ledger::Role::HaveValues')) {
+	%h = %{$self->_hashValue(@_)};
+    }
+    return %h;
+}
+
 sub numlines {
     return 1;
 }
@@ -71,9 +80,9 @@ extends 'Ledger::Element';
 
 =head1 DESCRIPTION
 
-This object will be the base object for all Element objects that
-can be added into a Ledger::Journal object (more precisely into a object
-with the 'Ledger::Role::HaveJournalElements' role)
+This object will be the base object for all Element objects that can be added
+into a Ledger::Journal object (more precisely into a object with the
+'Ledger::Role::HaveJournalElements' role)
 
 =cut
 

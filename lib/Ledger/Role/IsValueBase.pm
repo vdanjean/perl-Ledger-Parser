@@ -127,4 +127,46 @@ before 'cleanup' => sub {
     }
 };
 
+use Data::Dumper;
+sub _hasSpecificValue {
+    my $self = shift;
+    if (not $self->has_default_value) {
+	return 1;
+    }
+    my $def = $self->default_value;
+    my $v=$self->value;
+    print Dumper($v), "\n";
+    if (ref($self->value)) {
+	return $self->value != $self->default_value;
+    } else {
+	return $self->value ne $self->default_value;
+    }
+}
+
+sub _hashKey {
+    my $self = shift;
+    return $self->name;
+}
+
+sub _hashValue {
+    my $self = shift;
+    if (!$self->_hasSpecificValue) {
+	print "Skipping value ", $self->value_str, "\n";
+	return undef;
+    }
+    return $self->value_str;
+}
+
+sub toHash {
+    my $self = shift;
+
+    my $val=$self->_hashValue;
+    if (not defined($val)) {
+	return ();
+    }
+    return (
+	$self->_hashKey => $self->_hashValue
+	);
+}
+
 1;

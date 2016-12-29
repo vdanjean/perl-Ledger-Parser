@@ -72,4 +72,11 @@ sub _iterable_values {
     return $self->value->_iterable_values(@_);
 }
 
+around '_hashValue' => sub {
+    my $orig = shift;
+    my $self = shift;
+    my $hv = $self->value->_hashValue(@_);
+    return $hv;
+};
+
 1;

@@ -30,4 +30,15 @@ sub _null_value {
 	);
 }
 
+around '_hashValue' => sub {
+    my $orig = shift;
+    my $self = shift;
+    
+    my %hr=(
+	%{$self->$orig(@_)},
+	'kind' => "".$self->value->kind,
+	);
+    return \%hr;
+};
+
 1;
