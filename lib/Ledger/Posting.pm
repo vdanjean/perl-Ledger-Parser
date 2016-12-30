@@ -10,7 +10,7 @@ use utf8;
 extends 'Ledger::Transaction::Element';
 
 with (
-    'Ledger::Role::IsElementWithElements',
+    'Ledger::Role::Element::Layout::MultiLines::List',
     );
 
 has '+elements' => (
@@ -65,7 +65,7 @@ sub _readEnded {
     return (!defined($line) || $line !~ /^\s+;/);
 }
 
-before 'load_from_reader' => sub {
+sub load_values_from_reader {
     my $self = shift;
     my $reader = shift;
 
@@ -83,7 +83,7 @@ before 'load_from_reader' => sub {
 	'parse_value_error_msg' => "invalid data in posting line",
 	'store' => 'all',
 	);
-    1;
+    return;
 };
 
 sub compute_text {

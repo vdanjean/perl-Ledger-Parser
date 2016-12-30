@@ -2,6 +2,8 @@ package Ledger::Role::Element::Layout::WithSubElements;
 use Moose::Role;
 use namespace::sweep;
 
+requires 'load_from_reader';
+
 with (
     'Ledger::Role::Element::Layout::Base',
     'Ledger::Role::Readable',
