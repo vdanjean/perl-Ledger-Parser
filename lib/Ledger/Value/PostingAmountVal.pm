@@ -15,7 +15,7 @@ has '+value' => (
     coerce   => 1,
     );
 
-sub _compute_text {
+sub _compute_text_of_value {
     my $self = shift;
 
     return "".$self->value;

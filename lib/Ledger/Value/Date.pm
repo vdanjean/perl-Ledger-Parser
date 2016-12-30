@@ -77,7 +77,7 @@ sub _parse_date {
     return $tm;
 }
 
-sub _compute_text {
+sub _compute_text_of_value {
     my $self = shift;
 
     return $self->value->strftime($self->config->date_format);

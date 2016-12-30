@@ -12,7 +12,7 @@ has '+value' => (
     isa      => 'Path::Class::File',
     );
 
-sub _compute_text {
+sub _compute_text_of_value {
     my $self = shift;
 
     return $self->value->stringify;

@@ -112,10 +112,10 @@ sub compute_text {
     my $self = shift;
     
     return '' if ! $self->present;
-    return $self->_compute_text;
+    return $self->_compute_text_of_value;
 }
 
-sub _compute_text {
+sub _compute_text_of_value {
     my $self = shift;
     
     return "".$self->value;

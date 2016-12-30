@@ -14,7 +14,7 @@ has '+value' => (
     isa      => 'Ledger::Type::Transaction::State',
     );
 
-sub _compute_text {
+sub _compute_text_of_value {
     my $self = shift;
     
     return Ledger::Transaction::State->toSymbol(

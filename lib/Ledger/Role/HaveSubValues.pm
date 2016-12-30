@@ -7,6 +7,7 @@ with (
     );
 
 requires '_null_value';
+requires '_compute_text_of_value';
 
 has '_has_value' => (
     is       => 'rw',
@@ -16,7 +17,7 @@ has '_has_value' => (
     required => 1,
     );
 
-around '_compute_text' => sub {
+around '_compute_text_of_value' => sub {
     my $orig = shift;
     my $self = shift;
 
