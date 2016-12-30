@@ -20,6 +20,17 @@ sub journals {
     return $self->parent->journals;
 }
 
+sub element {
+    my $self = shift;
+    my $cur = $self;
+
+    while (! $cur->isa('Ledger::Element')) {
+	#print "Skipping ", $cur->meta->name, "\n";
+	$cur = $cur->parent;
+    }
+    return $cur;
+}
+
 sub config {
     my $self = shift;
     return $self->journals->config;
