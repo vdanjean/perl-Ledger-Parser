@@ -5,6 +5,11 @@ use utf8;
 #use Carp;
 use Path::Class::File;
 
+my $DEBUG = 0;
+sub debug {
+    print $_[0], "\n";
+}
+
 has 'lineno' => (
     is       => 'ro',
     isa      => 'Int',
@@ -110,15 +115,19 @@ has 'next_line' => (
 before 'next_line' => sub {
     my $self = shift;
     
+    debug "next_line called" if $DEBUG;
     if ((not $self->_has_next_line) && (not $self->eof)) {
+	debug "next_line computed" if $DEBUG;
 	my $fh=$self->_fh;
 	my $line=<$fh>;
 	if (defined($line)) {
 	    $self->_inc_lineno;
 	    $self->_set_next_line($line);
+	    debug "next_line: loaded $line" if $DEBUG;
 	} else {
 	    $self->_set_eof(1);
 	    $self->_fh->close();
+	    debug "next_line: EOF" if $DEBUG;
 	}
     }
 };
@@ -137,6 +146,7 @@ has 'type' => (
 sub pop_line {
     my $self = shift;
     my $line = $self->next_line;
+    debug "pop_line called" if $DEBUG;
     $self->_unset_next_line;
     return $line;
 }
@@ -145,6 +155,7 @@ sub give_back_next_line {
     my $self = shift;
     my $line = shift;
 
+    debug "give_back_next_line called" if $DEBUG;
     if ($self->_has_next_line || $self->eof) {
 	$self->_error("No way to give back previous line in reader when next one is loaded");
     }

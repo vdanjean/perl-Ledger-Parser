@@ -4,6 +4,11 @@ use namespace::sweep;
 use TryCatch;
 use Ledger::Util qw(indent);
 
+my $DEBUG = 0;
+sub debug {
+    print $_[0], "\n";
+}
+
 with ('Ledger::Role::Readable');
 
 requires '_readEnded';
@@ -20,17 +25,18 @@ sub load_from_reader {
     for(;;) {
 	@elementKinds = $self->_listElementKinds;
 	@errors=();
-	#print "Trying all kinds in ".$self->meta->name." for ".($reader->next_line // '');
+	debug "Trying all kinds in ".$self->meta->name." for ".($reader->next_line // '')
+	    if $DEBUG;
 	last LINE if $self->_readEnded($reader);
 	$aborted=0;
 	while (my $kind=shift @elementKinds) {
 	    my $elem=undef;
 	    try {
-		#print "Trying kind $kind\n";
+		debug "Trying kind $kind" if $DEBUG;
 		$elem = "$kind"->new(
 		    parent => $self,
 		    reader => $reader);
-		#print "Adding kind $kind\n";
+		debug "Adding kind $kind" if $DEBUG;
 		$self->_add_element($elem);
 	    }
 	    catch (Ledger::Exception::ParseError $e) {
@@ -70,7 +76,7 @@ sub load_from_reader {
 		);
 	}
     }
-    #print "Parsing done in ".$self->meta->name."\n";
+    debug "Parsing done in ".$self->meta->name if $DEBUG;
 }
 
 1;
