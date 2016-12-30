@@ -110,13 +110,20 @@ sub validate {
 
 sub compute_text {
     my $self = shift;
-    
+
+    #print "     Compute text (value Base) for ", $self->meta->name, "\n";
+    #print "       p=", $self->present,"\n";
+    #if (ref($self->value) && ref($self->value) =~ /^Ledger/) {
+    #    print "       v=", $self->value->meta->name,"\n";
+    #}
     if (defined($self->value) && ! $self->present) {
 	#print "WARNING: !!!\n";
 	# TODO: this should not be possible, but it is !!! Fixing it as we can
 	$self->value($self->value);
     }
+    #print "       p=", $self->present,"\n";
     return '' if ! $self->present;
+    #print "     Compute text (value Base present) for ", $self->meta->name, "\n";
     return $self->_compute_text_of_value;
 }
 

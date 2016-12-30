@@ -21,6 +21,8 @@ around '_compute_text_of_value' => sub {
     my $orig = shift;
     my $self = shift;
 
+    #print "Preparing text of ", $self->meta->name, "\n";
+    #print "  using ", $self->value->meta->name, "\n";
     return $self->value->compute_text;
 };
 
@@ -59,6 +61,7 @@ around 'value' => sub {
 
 before 'cleanup' => sub {
     my $self = shift;
+    #print "Before cleanup in ", $self->meta->name, "\n";
     $self->value->cleanup(@_);
 };
 
