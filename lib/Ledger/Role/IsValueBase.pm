@@ -111,6 +111,11 @@ sub validate {
 sub compute_text {
     my $self = shift;
     
+    if (defined($self->value) && ! $self->present) {
+	#print "WARNING: !!!\n";
+	# TODO: this should not be possible, but it is !!! Fixing it as we can
+	$self->value($self->value);
+    }
     return '' if ! $self->present;
     return $self->_compute_text_of_value;
 }
