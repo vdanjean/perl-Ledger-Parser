@@ -9,6 +9,7 @@ use Ledger::Util qw(indent);
 with(
     'Ledger::Role::IsParent',
     'Ledger::Role::Iterator::Values',
+    'Ledger::Role::NeedBUILD',
     );
 
 has 'values' => (
@@ -21,6 +22,7 @@ has 'values' => (
 	all_named_values       => 'elements',
 	all_values       => 'values',
 	_register_value  => 'set',
+	_remove_value     => 'delete',
 	#_filter_types=> 'grep',
 	#find_element   => 'first',
 	#get_type    => 'get',
@@ -102,6 +104,69 @@ sub _hashValue {
     return \%hv;
 }
 
+use Data::Dumper;
+$Data::Dumper::Sortkeys = \&my_filter;
+sub my_filter {
+    my ($hash) = @_;
+    return [ (sort grep { ! /parent/ } keys %$hash) ];
+}
+
+sub _fix_input_hash {
+    my $self=shift;
+    my $h = shift;
+
+    foreach my $k (keys %$h) {
+	if ($k =~ /([^.]+)[.](.+)/) {
+	    my $nk=$1;
+	    $h->{$1}->{$2}=$h->{$k};
+	    delete($h->{$k});
+	}
+    }
+}
+
+sub load_values_from_hash {
+    my $self = shift;
+    my $h = shift;
+
+    $self->_fix_input_hash($h);
+    
+    #print "Loading values into element ", $self->element->meta->name,
+    #" (", $self->meta->name, ")\n";
+    foreach my $n ($self->get_all_value_names) {
+	#print $n, "...\n";
+	my $raw='_'.$n.'_rawvalue';
+	$self->$raw->load_value_from_hash($h->{$n}, $h);
+    }
+    return;
+    
+    # Debug stuff only
+    print "Loaded values into element ", $self->element->meta->name,
+    " (", $self->meta->name, "):\n";
+    if ($self->isa('Ledger::Element')) {
+	#$self->cleanup;
+	print "E: ", $self;
+	print Dumper($self), "\n";
+	foreach my $n ($self->get_all_value_names) {
+	    my $v = $self->$n;
+	    print "  val ($n): ", $v, "\n";
+	    if (ref($v) && ref($v) =~ /^Ledger::Value::SubType::/) {
+		print "     -> ", $v->compute_text, "\n";
+	    }
+	}
+    } else {
+	print "V: ", $self->compute_text, " ($self)\n";
+    }
+}
+
+around 'BUILD' => sub {
+    my $orig = shift;
+    my $self = shift;
+    my $args = shift;
+
+    if (exists($args->{'contents'})) {
+	$self->load_values_from_hash($args->{'contents'});
+    }
+};
 ## END Hash support
 
 sub _iterable_values {
@@ -131,6 +196,7 @@ sub formatValueParams {
 
     return map {
 	my $name=$_;
+	#print "format val $name in ", ref($self), "\n";
 	my $_name_rawvalue='_'.$name.'_rawvalue';
 	my $type = $self->$_name_rawvalue->format_type;
 	my %params=();
@@ -145,7 +211,7 @@ sub formatValueParams {
 	Ledger::Util->buildFormatParam(
 	    $name,
 	    'object' => $self,
-	    'type' => $self->$_name_rawvalue->format_type,
+	    'type' => $type,
 	    %params,
 	    );
     } $self->all_value_names;

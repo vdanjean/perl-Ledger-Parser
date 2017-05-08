@@ -83,6 +83,19 @@ around '_hashValue' => sub {
     my $hv = $self->value->_hashValue(@_);
     return $hv;
 };
+
+around 'load_value_from_hash' => sub {
+    my $orig = shift;
+    my $self = shift;
+    my $v = shift;
+    my $h = shift;
+    #my $fh = shift;
+    my $name = $self->name;
+
+    if (ref($v) eq 'HASH') {
+	$self->value->load_values_from_hash($v);
+    }
+};
 ## END Hash support
 
 1;

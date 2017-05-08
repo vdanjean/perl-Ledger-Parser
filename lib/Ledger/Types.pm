@@ -3,6 +3,7 @@ use Moose::Util::TypeConstraints;
 use namespace::sweep;
 use Ledger::Posting::Kind ':constants';
 use Ledger::Transaction::State ':constants';
+#use Ledger::Util::Filter ':constants';
 
 enum 'Ledger::Type::Posting::Kind', [REAL, VIRTUALBALANCED, VIRTUALUNBALANCED];
 
@@ -18,4 +19,5 @@ coerce 'Ledger::Type::PostingAmount::Val',
     from 'Str',
     via { Math::BigRat->new($_) };
 
+#enum 'Ledger::Type::Filter', [ACCEPT, FILTER, FILTERSUB];
 1;

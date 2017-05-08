@@ -10,6 +10,7 @@ extends 'Ledger::Journal::Element';
 
 with (
     'Ledger::Role::Element::Layout::MultiLines::List',
+    'Ledger::Role::HaveSubElementNotes',
     );
 
 has '+elements' => (
@@ -163,6 +164,25 @@ sub _err {
         #"line $self->{_linum}: ",
         $msg#." in\n".$self->as_string
     );
+}
+
+use utf8;
+sub addPosting {
+    my $self=shift;
+    my %args=(@_);
+
+    my $hp={
+	'account' => {
+	    'name' => $args{'account'} // 'Missing::Account::Name',
+	    'kind' => $args{'accountKind'} // 'Real',
+	},
+	'amount' => {
+	    # TODO: FIXME: useless string convertion
+	    'amount' => ($args{'amount'} // 0)."",
+	    'commodity' => $args{'commodity'} // '€',
+	},
+    };
+    return $self->add('Posting', $hp);
 }
 
 ###################################################################

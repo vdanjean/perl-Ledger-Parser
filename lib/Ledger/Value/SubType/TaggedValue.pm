@@ -44,7 +44,7 @@ sub parse_str {
 	$str,
 	'invalid Valued Tag syntax')
 	unless $str =~ /\A(
-            (\S+):                       # 2) tag name
+            ([^\s:]+)::?                 # 2) tag name
             (?:(\s+)                     # 3) ws1
 	    (.*))?                       # 4) tag value
             )\z/x;

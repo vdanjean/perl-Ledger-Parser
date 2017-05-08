@@ -2,7 +2,10 @@ package Ledger::Element;
 use Moose;
 use namespace::sweep;
 
-with 'Ledger::Role::HaveParent';
+with (
+    'Ledger::Role::HaveParent',
+    'Ledger::Role::Storage',
+    );
 
 sub validate {
     my $self=shift;

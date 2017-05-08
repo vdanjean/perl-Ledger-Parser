@@ -6,7 +6,7 @@ use TryCatch;
 
 my @metadatatypes;
 BEGIN {
-    @metadatatypes=qw(TaggedValue PlainNote);# SimpleTags PlainNote);
+    @metadatatypes=qw(TaggedValue PlainNote NoNote);# SimpleTags PlainNote);
 
     for my $type (@metadatatypes) {
 	my $mod="Ledger::Value::SubType::$type";
@@ -33,7 +33,7 @@ with (
 
 sub _null_value {
     my $self = shift;
-    Ledger::Value::SubType::PlainNote->new(
+    return Ledger::Value::SubType::NoNote->new(
 	'parent' => $self,
 	);
 }
@@ -69,6 +69,7 @@ sub _parse_str {
 }
 
 ## BEGIN Hash support
+use Data::Dumper;
 around '_hashKey' => sub {
     my $orig = shift;
     my $self = shift;
@@ -79,6 +80,37 @@ around '_hashKey' => sub {
     $realclass=$1;
     return $self->$orig(@_).".".$realclass;
 };
+
+around 'load_value_from_hash' => sub {
+    my $orig = shift;
+    my $self = shift;
+    my $v = shift;
+    my $h = shift;
+
+    #print Dumper($v, $h);
+    if (! defined($v)) {
+	$self->parent->_remove_value($self->name);
+	return;
+    }
+    if (ref($v) eq 'HASH') {
+	my @keys=keys %$v;
+	if (scalar(@keys) != 1) {
+	    #print Dumper($v);
+	    #print join(',', @keys), "\n";
+	    die "Invalid hash for a MetaData\n";
+	}
+	my $type=$keys[0];
+	my $realtype='Ledger::Value::SubType::'.$type;
+	# TODO : check type
+	my $metadata = $realtype->new(
+	    parent => $self,
+	    );
+	$self->value($metadata);
+	return $self->$orig($v->{$type}, $h, @_);
+    }
+    return $self->$orig($v, @_);
+};
+
 ## END Hash support
 
 1;

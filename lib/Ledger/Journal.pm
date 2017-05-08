@@ -6,6 +6,7 @@ use namespace::sweep;
 # VERSION
 
 with (
+    'Ledger::Role::Storage',
     'Ledger::Role::HaveParent',
     'Ledger::Role::HaveReadableElementsList',
     'Ledger::Role::HaveJournalElements' => {
@@ -113,6 +114,8 @@ sub startlinenum {
 sub toHash {
     return ();
 }
+
+sub load_values_from_hash { }
 ## END Hash support
 
 1;

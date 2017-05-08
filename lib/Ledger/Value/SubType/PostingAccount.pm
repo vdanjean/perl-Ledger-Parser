@@ -95,4 +95,28 @@ sub parse_str {
     }
 }
 
+## BEGIN Hash support
+use Data::Dumper;
+around '_hashValue' => sub {
+    my $orig = shift;
+    my $self = shift;
+
+    my %hr=(
+	%{$self->$orig(@_)},
+	'kind' => "".$self->kind,
+	);
+    return \%hr;
+};
+after 'load_values_from_hash' => sub {
+    my $self = shift;
+    my $h = shift;
+
+    #print Dumper($h);
+    if (exists($h->{'kind'})) {
+	#print "ajusting kind\n";
+	$self->kind($h->{'kind'});
+    }
+};
+## END Hash support
+
 1;

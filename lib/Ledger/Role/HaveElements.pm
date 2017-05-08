@@ -102,6 +102,55 @@ around 'toHash' => sub {
     return %hv;
 };
 
+requires 'load_values_from_hash';
+after 'load_values_from_hash' => sub {
+    my $self = shift;
+    my $h = shift;
+
+    #print "Loading elements into ", $self->element->meta->name, "\n";
+
+    return if not exists($h->{'elements'});
+
+    for my $he (@{$h->{'elements'}}) {
+	$self->add($he->{'type'}, $he);
+    }
+    #print "Loaded elements into ", $self->element->meta->name, "\n";
+};
+
+use Data::Dumper;
+use Ledger::Value::Date;
+sub _add {
+    my $self=shift;
+    my $realtype = shift;
+    my $contents = shift;
+    #delete $contents->{'elements'};
+    #print "iHASH=", Dumper($contents), "\n";
+    my $element=$realtype->new(
+	'parent' => $self,
+	'contents' => $contents,
+	);
+    #"".$transaction;
+    #print "VNAME=", join(' ', $transaction->all_value_names), "\n";
+    $self->_add_element($element);
+    return $element;
+}
+
+sub add {
+    my $self=shift;
+    my $type = shift;
+    my $realtype = "Ledger::".$type;
+
+    return $self->_add($realtype, @_)
+}
+
+sub copy {
+    my $self=shift;
+    my $e = shift;
+    my $realtype = ref($e);
+    my $contents = { $e->toHash };
+    
+    return $self->_add($realtype, $contents);
+}
 ## END Hash support
 
 1;

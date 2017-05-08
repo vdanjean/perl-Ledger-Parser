@@ -75,7 +75,7 @@ sub tag {
 
 # Update before read access if required
 for my $m ('tag_names', 'tags', 'tag_pairs', 'has_no_tags', 'has_tags',
-	   'tag0', 'tag') {
+	   'has_tag', 'tag0', 'tag') {
     before $m => sub {
 	my $self = shift;
 	if ($self->_tags_need_collect) {

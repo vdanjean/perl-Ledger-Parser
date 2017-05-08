@@ -11,6 +11,7 @@ extends 'Ledger::Transaction::Element';
 
 with (
     'Ledger::Role::Element::Layout::MultiLines::List',
+    'Ledger::Role::HaveSubElementNotes',
     );
 
 has '+elements' => (
@@ -53,6 +54,13 @@ has_value 'ws3' => (
     default          => '  ',
     );
 
+has_value 'ws4' => (
+    isa              => 'WS0',
+    required         => 1,
+    reset_on_cleanup => 1,
+    default          => ' ',
+    );
+
 has_value 'note' => (
     isa      => 'MetaData',
     );
@@ -76,7 +84,7 @@ sub load_values_from_reader {
 	    ^(?<ws1>\s+)
 	    (?<account>\S.*?)
 	    (?: (?<ws2>\s{2,}|\t)(?<amount>\S.*?) )?
-	    (?: (?<ws3>\s*) ;(?<note>.*?))?
+	    (?: (?<ws3>\s*) ; (?<ws4>\s*) (?<note>.*?))?
 	                    >x,
 	'accept_error_msg' => "invalid posting line",
 	'noaccept_error_msg' => "not a posting line",

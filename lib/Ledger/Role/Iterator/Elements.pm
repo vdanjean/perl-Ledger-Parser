@@ -61,7 +61,7 @@ sub getElementsIterator {
 		      );;
 		  next;
 	      }
-	      my $filter=0;
+	      my $filter=ACCEPT;
 	      # ACCEPT: keep element
 	      # FILTER: skip it totally
 	      # FILTERSUB: skip its subelements

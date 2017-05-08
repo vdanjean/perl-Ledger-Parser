@@ -2,9 +2,9 @@ package Ledger::Role::Readable;
 use Moose::Role;
 use namespace::sweep;
 
-requires 'load_from_reader';
+with 'Ledger::Role::NeedBUILD';
 
-sub BUILD {}
+requires 'load_from_reader';
 
 after 'BUILD' => sub {
     my $self = shift;

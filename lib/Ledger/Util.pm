@@ -34,6 +34,8 @@ sub format {
 	}
 	my $avail_values=$args->{$name};
 	my $nb=min(scalar(@subformats), scalar(@{$avail_values}))-1;
+	#print "nb=$nb for $name (", scalar(@subformats), "/",
+	#scalar(@{$avail_values}), ")\n";
 	for (;$nb>=0; $nb--) {
 	    if ($subformats[$nb] ne "" && defined($avail_values->[$nb])) {
 		push @values, $avail_values->[$nb];
@@ -83,11 +85,14 @@ sub buildFormatParam {
 
     my @fpar=();
     if ($has_value) {
+	#print "pushing value '$value' for $name\n";
 	push @fpar, $value;
 	if ($type eq 'Num') {
 	    if (Math::BigRat->new($value)->is_int) {
 		push @fpar, undef, $value;
 	    }
+	} elsif ($value eq '') {
+	    push @fpar, "";
 	}
     } else {
 	push @fpar, "", "";

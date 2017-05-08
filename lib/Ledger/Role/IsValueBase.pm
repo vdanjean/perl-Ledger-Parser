@@ -221,6 +221,17 @@ sub toHash {
 	$self->_hashKey => $val
 	);
 }
+
+sub load_value_from_hash {
+    my $self = shift;
+    my $v = shift;
+
+    if (defined($v) && !ref($v)) {
+	#print "Loading value $name from hash\n";
+	$self->value_str($v);
+	#print "Loaded value $name: ", $self, "\n";
+    }
+}
 ## END Hash support
 
 1;
